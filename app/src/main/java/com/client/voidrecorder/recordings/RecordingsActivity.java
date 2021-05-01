@@ -295,9 +295,62 @@ public class RecordingsActivity extends AppCompatActivity {
             Toast.makeText(RecordingsActivity.this, "on Swiped ", Toast.LENGTH_SHORT).show();
 
 
+            //Remove swiped item from list and notify the RecyclerView
+            new AlertDialog.Builder(RecordingsActivity.this)
+                    .setTitle("Delete entry")
+                    .setMessage("Are you sure you want to delete this entry?")
+
+                    // Specifying a listener allows you to take an action before dismissing the dialog.
+                    // The dialog is automatically dismissed when a dialog button is clicked.
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Continue with delete operation
+                            int position = viewHolder.getAdapterPosition();
+                            Uri fileUri = recordingsList.get(position).uri;
+                            Log.d(TAG, "onSwiped: File Uri : " + fileUri);
+                            File fileToDelete = new File(fileUri.getPath());
+                            deleteFile(fileToDelete);
+                            recordingsList.remove(position);
+                            adapter.notifyItemRemoved(position);
+                        }
+                    })
+
+                    // A null listener allows the button to dismiss the dialog and take no further action.
+                    .setNegativeButton(android.R.string.no, null)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+
+
+
 
         }
     };
+
+    private void deleteFile(File file) {
+        // Set up the projection (we only need the ID)
+//        String[] projection = { MediaStore.Audio.Media._ID };
+
+        // Match on the file path
+        String selection = MediaStore.Audio.Media.DATA + " = ?";
+        String[] selectionArgs = new String[]{file.getAbsolutePath()};
+
+        // Query for the ID of the media matching the file path
+        Uri queryUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        ContentResolver contentResolver = getContentResolver();
+        Cursor c = contentResolver.query(queryUri, null, selection, selectionArgs, null);
+        if (c.moveToFirst()) {
+            // We found the ID. Deleting the item via the content provider will also remove the file
+            long id = c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
+            Uri deleteUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+            contentResolver.delete(deleteUri, null, null);
+            Log.d(TAG, "deleteFile: File Deleted");
+
+        } else {
+            // File not found in media store DB
+            Log.d(TAG, "deleteFile: File Not Found");
+        }
+        c.close();
+    }
 
 
 
