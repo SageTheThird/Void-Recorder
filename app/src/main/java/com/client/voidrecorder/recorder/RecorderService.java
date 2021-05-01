@@ -84,7 +84,17 @@ public class RecorderService extends Service {
 
         recorder.setOutputFile(recordingFullPath);
 
+        recorder.setMaxDuration(30 * SECONDS);//recording stops after x minutes
 
+        //After the recorder reaches  maxDuration, we can catch the event here
+        recorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+            @Override
+            public void onInfo(MediaRecorder mediaRecorder, int i, int i1) {
+                Log.d(TAG, "onInfo: Max Duration Reached, Resetting Recorder");
+                stopRecorder();
+                startRecorder();
+            }
+        });
 
 
         try {
