@@ -44,16 +44,13 @@ public class RecorderActivity extends AppCompatActivity {
         //recording service controller
         serviceIntent = new Intent(this, RecorderService.class);
 
+        bindViews();
 
         if (permissionsGranted()) {
 
-            bindViews();
+
 
             setAudioRecorder();
-
-            startBtn.setOnClickListener(startBtnClickListener);
-            stopBtn.setOnClickListener(stopBtnClickListener);
-            recordingsBtn.setOnClickListener(recordingsBtnClickListener);
 
             if(isServiceRunningInForeground(this, RecorderService.class)){
                 //when app is closed completely and then opened again, showRecording, ResumeTimer
@@ -88,13 +85,10 @@ public class RecorderActivity extends AppCompatActivity {
         stopBtn.setEnabled(false);
         stopBtn.setBackgroundResource(R.drawable.normal_background);
         stopBtn.setImageResource(R.drawable.noraml_stop);
-        Recording();
 
-
-    }
-
-    /* */
-    public void Recording() {
+        startBtn.setOnClickListener(startBtnClickListener);
+        stopBtn.setOnClickListener(stopBtnClickListener);
+        recordingsBtn.setOnClickListener(recordingsBtnClickListener);
 
     }
 
@@ -126,9 +120,6 @@ public class RecorderActivity extends AppCompatActivity {
         countDownTimer.start();
     }
 
-    private void terminateService(){
-
-    }
 
     //recorder time
     public String recorderTime() {

@@ -17,12 +17,12 @@ import java.util.ArrayList;
 public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.viewHolder> {
 
     Context context;
-    ArrayList<ModelRecordings> audioArrayList;
+    ArrayList<ModelRecordings> recordingsList;
     public OnItemClickListener onItemClickListener;
 
-    public RecordingsAdapter(Context context, ArrayList<ModelRecordings> audioArrayList) {
+    public RecordingsAdapter(Context context, ArrayList<ModelRecordings> recordingsList) {
         this.context = context;
-        this.audioArrayList = audioArrayList;
+        this.recordingsList = recordingsList;
     }
 
     @Override
@@ -35,10 +35,19 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
 
 
-        holder.title.setText(audioArrayList.get(i).getTitle());
-        holder.date.setText(audioArrayList.get(i).getDate());
-        holder.duration.setText(audioArrayList.get(i).getDuration());
-        holder.size.setText(audioArrayList.get(i).getSize());
+        holder.title.setText(recordingsList.get(i).getTitle());
+        holder.date.setText(recordingsList.get(i).getDate());
+        holder.duration.setText(recordingsList.get(i).getDuration());
+        holder.size.setText(recordingsList.get(i).getSize());
+
+        if(recordingsList.get(i).isSaved()){
+            //show tick mark
+            holder.saveBtn.setImageResource(R.drawable.ic_baseline_bookmark_24);
+        }else{
+            //show save icon
+            holder.saveBtn.setImageResource(R.drawable.ic_baseline_save_24);
+
+        }
 
         holder.saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,7 +70,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
     @Override
     public int getItemCount() {
-        return audioArrayList.size();
+        return recordingsList.size();
     }
 
     public class viewHolder extends RecyclerView.ViewHolder {

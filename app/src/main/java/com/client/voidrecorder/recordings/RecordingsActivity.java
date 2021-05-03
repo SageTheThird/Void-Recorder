@@ -2,19 +2,16 @@ package com.client.voidrecorder.recordings;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -35,14 +33,25 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.client.voidrecorder.R;
+import com.client.voidrecorder.db.DatabaseTransactions;
+import com.client.voidrecorder.db.RecordingDB;
 import com.client.voidrecorder.utils.Conversions;
+import com.client.voidrecorder.utils.FileHandler;
+import com.client.voidrecorder.utils.Paths;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 public class RecordingsActivity extends AppCompatActivity {
+
 
     private static final String TAG = "RecordingsActivity";
 
@@ -59,6 +68,10 @@ public class RecordingsActivity extends AppCompatActivity {
     private RecordingsAdapter adapter;
     Context mContext;
 
+    //db vars
+    private DatabaseTransactions databaseTransactions;
+    private HashMap<String, RecordingDB> savedRecordingsMap;//recordings which are permanently saved
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +82,9 @@ public class RecordingsActivity extends AppCompatActivity {
 
         if (checkPermission()) {
 
+            databaseTransactions = new DatabaseTransactions(mContext);
+            getSavedRecordingsFromDB();
+
             bindViews();
 
             setupRecordings();
@@ -78,10 +94,21 @@ public class RecordingsActivity extends AppCompatActivity {
 
 
 
-
     }
 
-
+    private void getSavedRecordingsFromDB() {
+        try {
+            savedRecordingsMap = databaseTransactions.getAllRecordingsDb();
+            Log.d(TAG, "onCreate: Saved Recordings : "+ savedRecordingsMap.size());
+            for (Map.Entry me : savedRecordingsMap.entrySet()) {
+                System.out.println("Key: "+me.getKey() + " & Value: " + me.getValue().toString());
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     private void bindViews(){
@@ -97,6 +124,7 @@ public class RecordingsActivity extends AppCompatActivity {
 
         recordingsList = new ArrayList<>();
         mediaPlayer = new MediaPlayer();
+
 
         getRecordedClips();
         setupRecyclerView();
@@ -173,46 +201,74 @@ public class RecordingsActivity extends AppCompatActivity {
     }
 
 
-    /*Access recorded clips and their meta data from MediaStore*/
-    public void getRecordedClips() {
+    private void sortFilesByDate(File[] files){
+        Arrays.sort(files, new Comparator() {
+            public int compare(Object o1, Object o2) {
 
-        ContentResolver contentResolver = getContentResolver();
-        //creating content resolver and fetch audio files
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                if (((File)o1).lastModified() > ((File)o2).lastModified()) {
+                    return -1;
+                } else if (((File)o1).lastModified() < ((File)o2).lastModified()) {
+                    return +1;
+                } else {
+                    return 0;
+                }
+            }
 
-        Cursor cursor = contentResolver.query(uri, null, MediaStore.Audio.Media.DATA + " like ?", new String[]{"%voidclips%"}, MediaStore.Audio.Media.DATE_ADDED + " DESC");
-
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-
-
-                String title = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE));
-                String data = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA));
-
-                //parses the size from bytes to kilobytes
-                String size = Conversions.humanReadableByteCountSI(Long.parseLong(cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.SIZE))));
-                ModelRecordings modelRecordings = new ModelRecordings();
-                modelRecordings.setTitle(title);
-                File file = new File(data);
-                Date date = new Date(file.lastModified());
-                SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
-
-                modelRecordings.setDate(format.format(date));
-                modelRecordings.setUri(Uri.parse(data));
-                modelRecordings.setSize(size);
-
-                //fetch the audio duration using MediaMetadataRetriever class
-                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                retriever.setDataSource(data);
-
-                modelRecordings.setDuration(timeConversion(Long.parseLong(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION))));
-                recordingsList.add(modelRecordings);
-
-            } while (cursor.moveToNext());
-        }
-
-
+        });
     }
+
+    /*Fetch Recorded clips from the output directory*/
+    private void getRecordedClips(){
+        File outputFolder = new File(Paths.getOutputFolder());
+        File[] files = outputFolder.listFiles();
+        sortFilesByDate(files);
+
+        assert files != null;
+        Log.d("Files", "Size: "+ files.length);
+
+        for (File file : files) {
+
+            Uri uri = Uri.fromFile(file);
+
+            Date date = new Date(file.lastModified());
+            SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
+
+            int fileSizeInBytes = Integer.parseInt(String.valueOf(file.length()));
+
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(mContext,uri);
+            String durationStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            long millSecond = Integer.parseInt(durationStr);
+
+            ModelRecordings modelRecordings = new ModelRecordings();
+            modelRecordings.setTitle(file.getName());
+            modelRecordings.setDate(format.format(date));
+            modelRecordings.setUri(Uri.fromFile(file));
+            modelRecordings.setSize(Conversions.humanReadableByteCountSI(fileSizeInBytes));
+            modelRecordings.setDuration(timeConversion(millSecond));
+            modelRecordings.setSaved(isRecordingSaved(file.getName()));
+
+
+            recordingsList.add(modelRecordings);
+
+
+            Log.d("Files", "FileName:" + file.getName());
+            Log.d("Files", "FileSize:" + Conversions.humanReadableByteCountSI(fileSizeInBytes));
+            Log.d("Files", "FileUri:" + Uri.fromFile(file));
+            Log.d("Files", "FileDate:" + format.format(date));
+            Log.d("Files", "FileDuration:" + timeConversion(millSecond));
+        }
+    }
+
+
+
+    private boolean isRecordingSaved(String title) {
+        if(savedRecordingsMap== null) return false;
+        return savedRecordingsMap.size() > 0 && savedRecordingsMap.containsKey(title);
+    }
+
+
+
 
 
 
@@ -236,6 +292,82 @@ public class RecordingsActivity extends AppCompatActivity {
             @Override
             public void onSaveClick(final int pos, View v) {
 
+                //Prompt the user for a file rename, while the current filename is already entered into EditField
+                final ModelRecordings currentClip = recordingsList.get(pos);
+
+                final View view = LayoutInflater.from(RecordingsActivity.this).inflate(R.layout.save_dialog_layout, null);
+
+                AlertDialog alertDialog = new AlertDialog.Builder(RecordingsActivity.this).create();
+                alertDialog.setTitle("Confirmation Dialog");
+                alertDialog.setCancelable(false);
+                alertDialog.setMessage("Enter a new name for the audio file.");
+
+
+                final EditText renameEditText = (EditText) view.findViewById(R.id.etComments);
+                renameEditText.setText(currentClip.getTitle());
+
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.O)
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        String newFileName = renameEditText.getText().toString();
+
+                        //here we rename the audio file and save the entry in db so that it doesn't get deleted automatically
+                        ModelRecordings curr_recording = recordingsList.get(pos);
+
+                        Log.d(TAG, "onSwiped: File Uri : " + curr_recording.uri);
+
+                        File from = new File(Paths.getOutputFolderPath() + curr_recording.getTitle());
+                        File to = new File(Paths.getOutputFolderPath() +  newFileName );
+
+                        Log.d(TAG, "onClick: Rename From : "+Paths.getOutputFolder() + "/" + curr_recording.getTitle() );
+                        Log.d(TAG, "onClick: Rename To : "+Paths.getOutputFolder() + "/" + newFileName  );
+
+
+
+                        if (FileHandler.rename(from, to)) {
+                            //Rename Success
+                            Log.i(TAG, "Rename File : Success");
+                            recordingsList.get(pos).setTitle(newFileName);
+                            adapter.notifyDataSetChanged();
+
+                            //here we save to db
+                            if(!savedRecordingsMap.containsKey(curr_recording.getTitle())){
+
+                                databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.uri.toString());
+                                recordingsList.get(pos).setSaved(true);
+                                adapter.notifyDataSetChanged();
+
+                            }
+
+                        } else {
+                            //Fail
+                            Log.i(TAG, "Rename File : Fail");
+                        }
+
+
+
+
+
+                        Log.d(TAG, "onSaveClick: Text Entered : "+newFileName);
+
+
+                    }
+                });
+
+
+                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                });
+
+                alertDialog.setView(view);
+                alertDialog.show();
+
+
 
             }
 
@@ -243,10 +375,19 @@ public class RecordingsActivity extends AppCompatActivity {
             public void onShareClick(int pos, View v) {
                 //Take the audio file and share it across multiple apps using intent
                 Toast.makeText(RecordingsActivity.this, "Shared", Toast.LENGTH_LONG).show();
-
+                shareFile(recordingsList.get(pos).getUri().getPath());
 
             }
         });
+    }
+
+    private void shareFile(String filePath){
+
+        Uri uri = Uri.parse(filePath);
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("audio/3gpp");
+        share.putExtra(Intent.EXTRA_STREAM, uri);
+        startActivity(Intent.createChooser(share, "Share Sound File"));
     }
 
     public boolean checkPermission() {
@@ -294,6 +435,8 @@ public class RecordingsActivity extends AppCompatActivity {
         public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
             Toast.makeText(RecordingsActivity.this, "on Swiped ", Toast.LENGTH_SHORT).show();
 
+            Log.d(TAG, "onSwiped: Swiped Title |: "+recordingsList.get(viewHolder.getAdapterPosition()).getTitle());
+
 
             //Remove swiped item from list and notify the RecyclerView
             new AlertDialog.Builder(RecordingsActivity.this)
@@ -308,15 +451,36 @@ public class RecordingsActivity extends AppCompatActivity {
                             int position = viewHolder.getAdapterPosition();
                             Uri fileUri = recordingsList.get(position).uri;
                             Log.d(TAG, "onSwiped: File Uri : " + fileUri);
-                            File fileToDelete = new File(fileUri.getPath());
-                            deleteFile(fileToDelete);
+                            File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
+
+                            Log.d(TAG, "onSwiped: Key Lookup : "+recordingsList.get(position).getTitle());
+
+                            if(savedRecordingsMap.size() > 0 && savedRecordingsMap.containsKey(recordingsList.get(position).getTitle())){
+                                Log.d(TAG, "onClick: Contains In Save DB");
+                                databaseTransactions.deleteRecordingFromDB(savedRecordingsMap.get(recordingsList.get(position).getTitle()));
+                            }
+
+                            FileHandler.deleteFile(fileToDelete);
+
                             recordingsList.remove(position);
                             adapter.notifyItemRemoved(position);
+
+                            //delete the entry from db as well
+
+
+
+
+
                         }
                     })
 
                     // A null listener allows the button to dismiss the dialog and take no further action.
-                    .setNegativeButton(android.R.string.no, null)
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            adapter.notifyDataSetChanged();
+                        }
+                    })
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show();
 
@@ -326,31 +490,8 @@ public class RecordingsActivity extends AppCompatActivity {
         }
     };
 
-    private void deleteFile(File file) {
-        // Set up the projection (we only need the ID)
-//        String[] projection = { MediaStore.Audio.Media._ID };
 
-        // Match on the file path
-        String selection = MediaStore.Audio.Media.DATA + " = ?";
-        String[] selectionArgs = new String[]{file.getAbsolutePath()};
 
-        // Query for the ID of the media matching the file path
-        Uri queryUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        ContentResolver contentResolver = getContentResolver();
-        Cursor c = contentResolver.query(queryUri, null, selection, selectionArgs, null);
-        if (c.moveToFirst()) {
-            // We found the ID. Deleting the item via the content provider will also remove the file
-            long id = c.getLong(c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
-            Uri deleteUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-            contentResolver.delete(deleteUri, null, null);
-            Log.d(TAG, "deleteFile: File Deleted");
-
-        } else {
-            // File not found in media store DB
-            Log.d(TAG, "deleteFile: File Not Found");
-        }
-        c.close();
-    }
 
 
 
@@ -425,5 +566,7 @@ public class RecordingsActivity extends AppCompatActivity {
             playRecording(audio_index);
         }
     };
+
+
 
 }

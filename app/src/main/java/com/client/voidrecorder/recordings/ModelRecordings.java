@@ -8,7 +8,17 @@ public class ModelRecordings {
     String duration;
     String date;
     String size;
+    boolean saved;
     Uri uri;
+
+
+    public boolean isSaved() {
+        return saved;
+    }
+
+    public void setSaved(boolean saved) {
+        this.saved = saved;
+    }
 
     public String getTitle() {
         return title;

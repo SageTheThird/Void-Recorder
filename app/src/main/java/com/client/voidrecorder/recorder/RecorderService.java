@@ -70,13 +70,18 @@ public class RecorderService extends Service {
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             recorder.setAudioSamplingRate(RECORDER_SAMPLERATE);
+//            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+//            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.HE_AAC);
+//            recorder.setAudioChannels(1);
+//            recorder.setAudioSamplingRate(44100);
+//            recorder.setAudioEncodingBitRate(96000);
         }
 
 
 
-        File folder = Paths.getOutputFolder();
+        File folder = new File(Paths.getOutputFolder());
 
-        recordingName = "REC " + dateTimeNow();
+        recordingName = "REC " + dateTimeNow() +".3gp";
 
         recordingFullPath = folder.getAbsolutePath() + File.separator + recordingName;
 
@@ -108,7 +113,7 @@ public class RecorderService extends Service {
 
     //generates formatted date/time for title
     private String dateTimeNow(){
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_mm_dd_hh_mm_ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_kk_mm_ss");
         return dateFormat.format(new Date());
     }
 
@@ -168,13 +173,13 @@ public class RecorderService extends Service {
         recorder = null;
 
         //creating content resolver and put the values
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Audio.Media.DATA, recordingFullPath);
-        values.put(MediaStore.Audio.Media.MIME_TYPE, "audio/3gpp");
-        values.put(MediaStore.Audio.Media.TITLE, recordingName);
-
-        //store audio recorder file in the external content uri
-        getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values);
+//        ContentValues values = new ContentValues();
+//        values.put(MediaStore.Audio.Media.DATA, recordingFullPath);
+//        values.put(MediaStore.Audio.Media.MIME_TYPE, "audio/3gpp");
+//        values.put(MediaStore.Audio.Media.TITLE, recordingName);
+//
+//        //store audio recorder file in the external content uri
+//        getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values);
 
     }
 
