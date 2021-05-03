@@ -28,7 +28,7 @@ public class RecorderActivity extends AppCompatActivity {
     private static final String TAG = "RecorderActivity";
 
     private TextView timerTextView;
-    private ImageView startBtn, stopBtn, recordingsBtn;
+    private ImageView startBtn, stopBtn, recordingsBtn, settingsBtn;
     private CountDownTimer countDownTimer;
     private int second = -1, minute, hour;// timer vars
     public static final int PERMISSION_ALL = 0;
@@ -40,7 +40,6 @@ public class RecorderActivity extends AppCompatActivity {
         setContentView(R.layout.activity_recorder);
 
 
-
         //recording service controller
         serviceIntent = new Intent(this, RecorderService.class);
 
@@ -49,10 +48,9 @@ public class RecorderActivity extends AppCompatActivity {
         if (permissionsGranted()) {
 
 
-
             setAudioRecorder();
 
-            if(isServiceRunningInForeground(this, RecorderService.class)){
+            if (isServiceRunningInForeground(this, RecorderService.class)) {
                 //when app is closed completely and then opened again, showRecording, ResumeTimer
                 Log.d(TAG, "onCreate: Service is running, toggle to recording");
                 showRecordingUI();
@@ -61,22 +59,16 @@ public class RecorderActivity extends AppCompatActivity {
         }
 
 
-
-
-
-
-
-
     }
 
 
-
     /* */
-    private void bindViews(){
+    private void bindViews() {
         timerTextView = (TextView) findViewById(R.id.text);
         startBtn = (ImageView) findViewById(R.id.start);
         stopBtn = (ImageView) findViewById(R.id.stop);
         recordingsBtn = (ImageView) findViewById(R.id.recordings);
+        settingsBtn = (ImageView) findViewById(R.id.settingsBtn);
     }
 
     /* */
@@ -89,12 +81,13 @@ public class RecorderActivity extends AppCompatActivity {
         startBtn.setOnClickListener(startBtnClickListener);
         stopBtn.setOnClickListener(stopBtnClickListener);
         recordingsBtn.setOnClickListener(recordingsBtnClickListener);
+        settingsBtn.setOnClickListener(settingsBtnClickListener);
 
     }
 
 
     /* */
-    private void showRecordingUI(){
+    private void showRecordingUI() {
         startBtn.setEnabled(false);
         recordingsBtn.setEnabled(false);
         stopBtn.setEnabled(true);
@@ -113,6 +106,7 @@ public class RecorderActivity extends AppCompatActivity {
                 second++;
                 timerTextView.setText(recorderTime());
             }
+
             public void onFinish() {
 
             }
@@ -139,17 +133,17 @@ public class RecorderActivity extends AppCompatActivity {
         int RECORD_AUDIO_PERMISSION = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
         int WRITE_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         int READ_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        ArrayList<String> PERMISSION_LIST =new ArrayList<>();
-        if((RECORD_AUDIO_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
+        ArrayList<String> PERMISSION_LIST = new ArrayList<>();
+        if ((RECORD_AUDIO_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             PERMISSION_LIST.add(Manifest.permission.RECORD_AUDIO);
         }
-        if((WRITE_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
+        if ((WRITE_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             PERMISSION_LIST.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
-        if((READ_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
+        if ((READ_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             PERMISSION_LIST.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
-        if(!PERMISSION_LIST.isEmpty()) {
+        if (!PERMISSION_LIST.isEmpty()) {
             ActivityCompat.requestPermissions(this, PERMISSION_LIST.toArray(new String[PERMISSION_LIST.size()]), PERMISSION_ALL);
             return false;
         }
@@ -158,9 +152,9 @@ public class RecorderActivity extends AppCompatActivity {
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        boolean record = false,storage =  false;
+        boolean record = false, storage = false;
         switch (requestCode) {
-            case  PERMISSION_ALL: {
+            case PERMISSION_ALL: {
                 if (grantResults.length > 0) {
                     for (int i = 0; i < permissions.length; i++) {
                         if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
@@ -235,7 +229,7 @@ public class RecorderActivity extends AppCompatActivity {
 
             stopService(serviceIntent);
             //cancel count down timer
-            if(countDownTimer != null){
+            if (countDownTimer != null) {
                 countDownTimer.cancel();
             }
             startBtn.setEnabled(true);
@@ -267,7 +261,15 @@ public class RecorderActivity extends AppCompatActivity {
         }
     };
 
+    View.OnClickListener settingsBtnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+
+            Toast.makeText(RecorderActivity.this, "Settings Clicked", Toast.LENGTH_LONG).show();
+        }
 
 
+
+    };
 
 }

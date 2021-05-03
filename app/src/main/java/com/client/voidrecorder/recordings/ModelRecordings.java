@@ -7,7 +7,7 @@ public class ModelRecordings {
     String title;
     String duration;
     String date;
-    String size;
+    long size;
     boolean saved;
     Uri uri;
 
@@ -52,12 +52,23 @@ public class ModelRecordings {
         this.uri = uri;
     }
 
-    public String getSize() {
+    public long getSize() {
         return size;
     }
 
-    public void setSize(String size) {
+    public void setSize(long size) {
         this.size = size;
     }
 
+    @Override
+    public String toString() {
+        return "ModelRecordings{" +
+                "title='" + title + '\'' +
+                ", duration='" + duration + '\'' +
+                ", date='" + date + '\'' +
+                ", size='" + size + '\'' +
+                ", saved=" + saved +
+                ", uri=" + uri +
+                '}';
+    }
 }

@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.client.voidrecorder.R;
+import com.client.voidrecorder.utils.Conversions;
 
 import java.util.ArrayList;
 
@@ -35,10 +36,10 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
 
 
-        holder.title.setText(recordingsList.get(i).getTitle());
+        holder.title.setText(titleWithoutExt(recordingsList.get(i).getTitle()));
         holder.date.setText(recordingsList.get(i).getDate());
         holder.duration.setText(recordingsList.get(i).getDuration());
-        holder.size.setText(recordingsList.get(i).getSize());
+        holder.size.setText(Conversions.humanReadableByteCountSI(recordingsList.get(i).getSize()));
 
         if(recordingsList.get(i).isSaved()){
             //show tick mark
@@ -66,6 +67,12 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         });
     }
 
+    public String titleWithoutExt(String str) {
+        if (str != null && str.length() > 0) {
+            str = str.substring(0, str.length() -4);
+        }
+        return str;
+    }
 
 
     @Override

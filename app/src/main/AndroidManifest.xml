@@ -34,6 +34,7 @@
         <activity
             android:name=".recordings.RecordingsActivity"
             android:label="Recordings"
+            android:theme="@style/AppTheme.NoActionBar"
             android:configChanges="orientation|screenSize"/>
 
         <service android:name=".recorder.RecorderService"/>

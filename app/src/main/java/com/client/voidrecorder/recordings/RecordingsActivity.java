@@ -54,13 +54,14 @@ public class RecordingsActivity extends AppCompatActivity {
 
 
     private static final String TAG = "RecordingsActivity";
+    public static final int MAX_ALLOWED_STORAGE = 5 * 1000000;//5MB
 
 
     ArrayList<ModelRecordings> recordingsList;
     RecyclerView recyclerView;
     MediaPlayer mediaPlayer;
     double current_pos, total_duration;
-    TextView current, total;
+    TextView current, total, toolbarTextView;
     ImageView prevBtn, nextBtn, pauseBtn;
     SeekBar seekBar;
     int audio_index = 0;
@@ -71,6 +72,9 @@ public class RecordingsActivity extends AppCompatActivity {
     //db vars
     private DatabaseTransactions databaseTransactions;
     private HashMap<String, RecordingDB> savedRecordingsMap;//recordings which are permanently saved
+
+    //space vars
+    private long totalSizeOfFolderInBytes = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +100,7 @@ public class RecordingsActivity extends AppCompatActivity {
 
     }
 
+    /*Fetches all saved recordings*/
     private void getSavedRecordingsFromDB() {
         try {
             savedRecordingsMap = databaseTransactions.getAllRecordingsDb();
@@ -112,12 +117,13 @@ public class RecordingsActivity extends AppCompatActivity {
 
 
     private void bindViews(){
-        current = (TextView) findViewById(R.id.current);
-        total = (TextView) findViewById(R.id.total);
-        prevBtn = (ImageView) findViewById(R.id.prev);
-        nextBtn = (ImageView) findViewById(R.id.next);
-        pauseBtn = (ImageView) findViewById(R.id.pause);
-        seekBar = (SeekBar) findViewById(R.id.seekbar);
+        current = findViewById(R.id.current);
+        total = findViewById(R.id.total);
+        prevBtn = findViewById(R.id.prev);
+        nextBtn = findViewById(R.id.next);
+        pauseBtn = findViewById(R.id.pause);
+        seekBar = findViewById(R.id.seekbar);
+        toolbarTextView =  findViewById(R.id.toolbarTextView);
     }
 
     public void setupRecordings() {
@@ -182,8 +188,6 @@ public class RecordingsActivity extends AppCompatActivity {
         handler.postDelayed(runnable, 1000);
     }
 
-
-
     //converts time to human readable form
     public String timeConversion(long value) {
         String audioTime;
@@ -199,7 +203,6 @@ public class RecordingsActivity extends AppCompatActivity {
         }
         return audioTime;
     }
-
 
     private void sortFilesByDate(File[] files){
         Arrays.sort(files, new Comparator() {
@@ -234,6 +237,7 @@ public class RecordingsActivity extends AppCompatActivity {
             SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 
             int fileSizeInBytes = Integer.parseInt(String.valueOf(file.length()));
+            totalSizeOfFolderInBytes += fileSizeInBytes;
 
             MediaMetadataRetriever mmr = new MediaMetadataRetriever();
             mmr.setDataSource(mContext,uri);
@@ -244,33 +248,85 @@ public class RecordingsActivity extends AppCompatActivity {
             modelRecordings.setTitle(file.getName());
             modelRecordings.setDate(format.format(date));
             modelRecordings.setUri(Uri.fromFile(file));
-            modelRecordings.setSize(Conversions.humanReadableByteCountSI(fileSizeInBytes));
+            modelRecordings.setSize(fileSizeInBytes);
             modelRecordings.setDuration(timeConversion(millSecond));
             modelRecordings.setSaved(isRecordingSaved(file.getName()));
 
 
             recordingsList.add(modelRecordings);
 
+        }
 
-            Log.d("Files", "FileName:" + file.getName());
-            Log.d("Files", "FileSize:" + Conversions.humanReadableByteCountSI(fileSizeInBytes));
-            Log.d("Files", "FileUri:" + Uri.fromFile(file));
-            Log.d("Files", "FileDate:" + format.format(date));
-            Log.d("Files", "FileDuration:" + timeConversion(millSecond));
+
+        spaceLimitExceedCheck();
+
+    }
+
+    /*Updates text on toolbar textView which shows size and no of recordings*/
+    private void updateSizeTextView(long size){
+        String sizeTemp = "Size : " +Conversions.humanReadableByteCountSI(size) + " (" + recordingsList.size() + ")";
+        toolbarTextView.setText(sizeTemp);
+    }
+
+    /*Checks if the total space occupied by recordings has exceeded the max space allowed and deletes oldest files on confirm*/
+    private void spaceLimitExceedCheck() {
+
+        updateSizeTextView(totalSizeOfFolderInBytes);
+
+        //check if the total folder size exceeds the max allowed
+        if(totalSizeOfFolderInBytes !=0 && totalSizeOfFolderInBytes >= MAX_ALLOWED_STORAGE){
+
+            //show dialog asking to confirm delete older files
+            showFreeUpSpaceDialog();
+
         }
     }
 
+    private void deleteOldestFiles(){
 
+        int noOfItemRemoved = 0;
+
+
+        //delete the last modified file in recording list (if not saved as well) until we are below max_allowed
+        if(recordingsList != null && recordingsList.size() > 0){
+
+            for(int i=recordingsList.size()-1; i>=0 ; i--){
+
+                //check if the clip is saved
+                if(!isRecordingSaved(recordingsList.get(i).getTitle())){
+
+                    totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - recordingsList.get(i).getSize();
+
+                    //delete statement goes here
+                    Log.d(TAG, "getRecordedClips: " +recordingsList.get(i).getTitle() +  " Deleted Due to MAx_LIMIT SUCCEED " + i + " : Size Now : "+Conversions.humanReadableByteCountSI(totalSizeOfFolderInBytes));
+                    delete(recordingsList.get(i).getTitle(), new File(Objects.requireNonNull(recordingsList.get(i).getUri().getPath())));
+                    recordingsList.remove(i);
+
+
+                    //check if after deletion it is less than max_allowed
+                    if(totalSizeOfFolderInBytes >= MAX_ALLOWED_STORAGE){
+                        //continue to next entry
+                        noOfItemRemoved++;
+                    }else{
+
+                        showSpaceFreedDialog(noOfItemRemoved);
+
+                        updateSizeTextView(totalSizeOfFolderInBytes);
+                        break;
+                    }
+                }
+
+
+
+            }
+
+        }
+    }
 
     private boolean isRecordingSaved(String title) {
         if(savedRecordingsMap== null) return false;
         return savedRecordingsMap.size() > 0 && savedRecordingsMap.containsKey(title);
     }
-
-
-
-
-
 
     private void setupRecyclerView() {
 
@@ -303,7 +359,7 @@ public class RecordingsActivity extends AppCompatActivity {
                 alertDialog.setMessage("Enter a new name for the audio file.");
 
 
-                final EditText renameEditText = (EditText) view.findViewById(R.id.etComments);
+                final EditText renameEditText = view.findViewById(R.id.etComments);
                 renameEditText.setText(currentClip.getTitle());
 
                 alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
@@ -335,6 +391,7 @@ public class RecordingsActivity extends AppCompatActivity {
                             //here we save to db
                             if(!savedRecordingsMap.containsKey(curr_recording.getTitle())){
 
+                                savedRecordingsMap.put(curr_recording.getTitle(), new RecordingDB(0, curr_recording.getTitle(), curr_recording.uri.toString()));
                                 databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.uri.toString());
                                 recordingsList.get(pos).setSaved(true);
                                 adapter.notifyDataSetChanged();
@@ -438,52 +495,7 @@ public class RecordingsActivity extends AppCompatActivity {
             Log.d(TAG, "onSwiped: Swiped Title |: "+recordingsList.get(viewHolder.getAdapterPosition()).getTitle());
 
 
-            //Remove swiped item from list and notify the RecyclerView
-            new AlertDialog.Builder(RecordingsActivity.this)
-                    .setTitle("Delete entry")
-                    .setMessage("Are you sure you want to delete this entry?")
-
-                    // Specifying a listener allows you to take an action before dismissing the dialog.
-                    // The dialog is automatically dismissed when a dialog button is clicked.
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // Continue with delete operation
-                            int position = viewHolder.getAdapterPosition();
-                            Uri fileUri = recordingsList.get(position).uri;
-                            Log.d(TAG, "onSwiped: File Uri : " + fileUri);
-                            File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
-
-                            Log.d(TAG, "onSwiped: Key Lookup : "+recordingsList.get(position).getTitle());
-
-                            if(savedRecordingsMap.size() > 0 && savedRecordingsMap.containsKey(recordingsList.get(position).getTitle())){
-                                Log.d(TAG, "onClick: Contains In Save DB");
-                                databaseTransactions.deleteRecordingFromDB(savedRecordingsMap.get(recordingsList.get(position).getTitle()));
-                            }
-
-                            FileHandler.deleteFile(fileToDelete);
-
-                            recordingsList.remove(position);
-                            adapter.notifyItemRemoved(position);
-
-                            //delete the entry from db as well
-
-
-
-
-
-                        }
-                    })
-
-                    // A null listener allows the button to dismiss the dialog and take no further action.
-                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            adapter.notifyDataSetChanged();
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-
+            showDeleteFileConfirmationDialog(viewHolder.getAdapterPosition());
 
 
 
@@ -493,7 +505,102 @@ public class RecordingsActivity extends AppCompatActivity {
 
 
 
+    /*Deletes the file from internal storage and db*/
+    private void delete(String title,  File fileToDelete){
+        Log.d(TAG, "onSwiped: Key Lookup : "+title);
 
+        if(savedRecordingsMap.size() > 0 && savedRecordingsMap.containsKey(title)){
+            databaseTransactions.deleteRecordingFromDB(title);
+        }
+
+        FileHandler.deleteFile(fileToDelete);
+    }
+
+
+
+
+    /*-------------------------------POP-UP DIALOGS--------------------------*/
+
+    private void showDeleteFileConfirmationDialog(int position) {
+
+        //Remove swiped item from list and notify the RecyclerView
+        new AlertDialog.Builder(RecordingsActivity.this)
+                .setTitle("Delete entry")
+                .setMessage("Are you sure you want to delete this entry?")
+
+                // Specifying a listener allows you to take an action before dismissing the dialog.
+                // The dialog is automatically dismissed when a dialog button is clicked.
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Continue with delete operation
+                        Uri fileUri = recordingsList.get(position).uri;
+                        Log.d(TAG, "onSwiped: File Uri : " + fileUri);
+                        File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
+                        //deletes file from internal storage and db as well
+                        delete(recordingsList.get(position).getTitle(), fileToDelete);
+
+                        recordingsList.remove(position);
+                        adapter.notifyItemRemoved(position);
+
+                    }
+                })
+
+                // A null listener allows the button to dismiss the dialog and take no further action.
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        adapter.notifyDataSetChanged();
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+
+
+    }
+
+    private void showFreeUpSpaceDialog() {
+        new AlertDialog.Builder(RecordingsActivity.this)
+                .setTitle("Max Limit Reached")
+                .setMessage("Do you want to free up space by deleting the oldest non-saved recordings?\n" +
+                        "\nNote: You can disable this alert by turning off automatic deletion or increasing max space allowed from settings." +
+                        "" +
+                        "")
+
+                // Specifying a listener allows you to take an action before dismissing the dialog.
+                // The dialog is automatically dismissed when a dialog button is clicked.
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // User agreed to delete
+                        deleteOldestFiles();
+
+                    }
+                })
+
+                // A null listener allows the button to dismiss the dialog and take no further action.
+                .setNegativeButton("Later", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void showSpaceFreedDialog(int noOfItemRemoved){
+        AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
+        alertDialog.setTitle("Space Freed");
+        alertDialog.setMessage(noOfItemRemoved+ " Oldest Non-Saved Recordings Were Deleted To Free Up Space!");
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        alertDialog.show();
+    }
+
+    /*-------------------------------POP-UP DIALOGS--------------------------*/
 
     /*-------------------------------LISTENERS------------------------------*/
 
@@ -567,6 +674,6 @@ public class RecordingsActivity extends AppCompatActivity {
         }
     };
 
-
+    /*-------------------------------LISTENERS------------------------------*/
 
 }

@@ -67,10 +67,10 @@ public class RecorderService extends Service {
             recorder = new MediaRecorder();
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            recorder.setAudioSamplingRate(RECORDER_SAMPLERATE);
-//            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            recorder.setAudioEncodingBitRate(128000);
+            recorder.setAudioSamplingRate(44100);
 //            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.HE_AAC);
 //            recorder.setAudioChannels(1);
 //            recorder.setAudioSamplingRate(44100);
@@ -81,7 +81,7 @@ public class RecorderService extends Service {
 
         File folder = new File(Paths.getOutputFolder());
 
-        recordingName = "REC " + dateTimeNow() +".3gp";
+        recordingName = "REC " + dateTimeNow() +".m4a";
 
         recordingFullPath = folder.getAbsolutePath() + File.separator + recordingName;
 
