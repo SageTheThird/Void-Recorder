@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/colorPrimary"
     android:orientation="vertical"
-    tools:context=".recorder.RecorderActivity">
+    tools:context=".MainActivity">
 
 
     <androidx.appcompat.widget.Toolbar

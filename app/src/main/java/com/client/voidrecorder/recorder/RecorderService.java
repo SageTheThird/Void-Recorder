@@ -3,17 +3,17 @@ package com.client.voidrecorder.recorder;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.os.IBinder;
-import android.provider.MediaStore;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import android.util.Log;
 
+import com.client.voidrecorder.MainActivity;
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.utils.Paths;
 
@@ -118,7 +118,7 @@ public class RecorderService extends Service {
     }
 
     private void showRecordingNotification() {
-        Intent intent = new Intent(RecorderService.this, RecorderActivity.class);
+        Intent intent = new Intent(RecorderService.this, MainActivity.class);
         PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
         // builds notification
