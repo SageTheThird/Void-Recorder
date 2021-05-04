@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="AudioQuality">
+        <item>High - 2MB/min</item>
+        <item>Medium - 1MB/min</item>
+        <item>Low - 0.5Mb/min</item>
+    </string-array>
+
+    <!--Store sampleRates in values-->
+    <string-array name="AudioQualityValues">
+        <item>High</item>
+        <item>Medium</item>
+        <item>Low</item>
+    </string-array>
+
+
+    <string-array name="outputFormats">
+        <item>MP3</item>
+        <item>M4a</item>
+        <item>3GP</item>
+    </string-array>
+
+    <string-array name="OutputFormatValues">
+        <item>mp3</item>
+        <item>m4a</item>
+        <item>3gp</item>
+    </string-array>
+
+</resources>

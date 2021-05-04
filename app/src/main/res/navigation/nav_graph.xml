@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/RecorderFragment">
+
+    <fragment
+        android:id="@+id/RecorderFragment"
+        android:name="com.client.voidrecorder.recorder.RecorderFragment"
+        android:label="@string/recorder_fragment_label"
+        tools:layout="@layout/fragment_recorder">
+
+        <action
+            android:id="@+id/action_RecorderFragment_to_RecordingsFragment"
+            app:destination="@id/RecordingsFragment" />
+
+        <action
+            android:id="@+id/action_RecorderFragment_to_SettingsFragment"
+            app:destination="@id/SettingsFragment" />
+    </fragment>
+
+
+    <fragment
+        android:id="@+id/RecordingsFragment"
+        android:name="com.client.voidrecorder.recordings.RecordingsFragment"
+        android:label="@string/recording_fragment_label"
+        tools:layout="@layout/fragment_recordings">
+
+        <action
+            android:id="@+id/action_RecordingsFragment_to_RecorderFragment"
+            app:destination="@id/RecorderFragment" />
+
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsFragment"
+        android:name="com.client.voidrecorder.settings.SettingsFragment"
+        android:label="@string/settings_fragment_label"
+        >
+
+    </fragment>
+</navigation>

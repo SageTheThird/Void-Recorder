@@ -12,6 +12,15 @@ public class ModelRecordings {
     Uri uri;
 
 
+    public ModelRecordings(String title, String duration, String date, long size, boolean saved, Uri uri) {
+        this.title = title;
+        this.duration = duration;
+        this.date = date;
+        this.size = size;
+        this.saved = saved;
+        this.uri = uri;
+    }
+
     public boolean isSaved() {
         return saved;
     }

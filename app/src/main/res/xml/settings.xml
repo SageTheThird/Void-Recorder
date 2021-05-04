@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Output Settings" >
+
+        <ListPreference
+            android:entries="@array/outputFormats"
+            android:entryValues="@array/OutputFormatValues"
+            android:key="@string/output_format_pref"
+            android:summary="Select an output format for recordings"
+            android:title="Output format"
+            android:defaultValue="m4a"
+            />
+
+        <ListPreference
+            android:entries="@array/AudioQuality"
+            android:entryValues="@array/AudioQualityValues"
+            android:key="@string/output_quality_pref"
+            android:summary="Choose a quality for recordings"
+            android:title="Audio Quality"
+            android:defaultValue="Medium Quality"
+            />
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Space Management" >
+
+        <EditTextPreference
+            android:key="@string/max_space_pref"
+            android:summary="Set the max space allowed in MB for the output folder"
+            android:title="Space Limit"
+            android:defaultValue="10"
+            />
+
+        <EditTextPreference
+            android:key="@string/max_duration"
+            android:summary="Set the max duration for each recording in minutes"
+            android:title="Max Duration"
+            android:defaultValue="3"
+            />
+
+        <CheckBoxPreference
+            android:key="@string/automatic_deletion_pref"
+            android:summary="While recording in background, it will delete files automatically to free up space for new recordings"
+            android:title="Automatic Deletion"
+            android:defaultValue="false"
+            />
+
+        <CheckBoxPreference
+            android:key="@string/space_limit_dialog_pref"
+            android:summary="Enables space limit exceeded warning when you go to recordings"
+            android:title="Space Limit Exceeded Dialog"
+            android:defaultValue="false"
+            />
+
+
+
+
+    </PreferenceCategory>
+</PreferenceScreen>

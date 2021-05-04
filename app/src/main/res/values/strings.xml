@@ -10,4 +10,15 @@
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+
+    <!--Settings-->
+    <string name="output_format_pref">outputFormatList</string>
+    <string name="output_quality_pref">outputQualityList</string>
+    <string name="max_space_pref">maxSpace</string>
+    <string name="max_duration">maxDuration</string>
+    <string name="automatic_deletion_pref">automaticDeletion</string>
+    <string name="space_limit_dialog_pref">spaceLimitDialog</string>
+
+
 </resources>
