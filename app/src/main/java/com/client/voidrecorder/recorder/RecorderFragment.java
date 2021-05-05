@@ -18,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 
 import com.client.voidrecorder.R;
+import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.SharedPreferencesHelper;
 
 import androidx.core.app.ActivityCompat;
@@ -30,8 +31,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class RecorderFragment extends Fragment {
 
@@ -60,31 +66,30 @@ public class RecorderFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
 
+
         mContext = getActivity();
+
         //recording service controller
         serviceIntent = new Intent(mContext, RecorderService.class);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
 
-        String maxSpace = sharedPreferences.getString("maxSpace", "");
-        String outputFormat = sharedPreferences.getString("outputFormatList", "");
-        boolean automaticDeletion = sharedPreferences.getBoolean("spaceLimitDialog", false);
-
-        Log.d(TAG, "onViewCreated: OutputFormat Shared Preferences : "+ maxSpace);
-        Log.d(TAG, "onViewCreated: OutputFormat Shared Preferences : "+ outputFormat);
-        Log.d(TAG, "onViewCreated: OutputFormat Shared Preferences : "+ automaticDeletion);
 
         bindViews(view);
+        requestPermissions();
 
-        if (permissionsGranted()) {
+        if (checkPermissions()) {
 
 
+            Log.d(TAG, "onViewCreated: Permissions Granted");
             setAudioRecorder();
 
             if (isServiceRunningInForeground(mContext, RecorderService.class)) {
                 //when app is closed completely and then opened again, showRecording, ResumeTimer
                 Log.d(TAG, "onCreate: Service is running, toggle to recording");
                 showRecordingUI();
+                Log.d(TAG, "onViewCreated: Time Difference : "+Conversions.getTimeDifference((String) SharedPreferencesHelper.get(mContext, getString(R.string.timer_resume), ""), Conversions.getTimeNow()));;
+
             }
 
         }
@@ -107,6 +112,7 @@ public class RecorderFragment extends Fragment {
 
     /* */
     public void setAudioRecorder() {
+        Log.d(TAG, "setAudioRecorder: Called");
 
         stopBtn.setEnabled(false);
         stopBtn.setBackgroundResource(R.drawable.normal_background);
@@ -134,6 +140,7 @@ public class RecorderFragment extends Fragment {
 
     //display recording time
     public void showTimer() {
+        
         countDownTimer = new CountDownTimer(Long.MAX_VALUE, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -163,7 +170,7 @@ public class RecorderFragment extends Fragment {
     }
 
     //runtime permissions check
-    public boolean permissionsGranted() {
+    public boolean requestPermissions() {
         int RECORD_AUDIO_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO);
         int WRITE_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         int READ_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -174,21 +181,42 @@ public class RecorderFragment extends Fragment {
         if ((WRITE_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             PERMISSION_LIST.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
-        if ((READ_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
-            PERMISSION_LIST.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
         if (!PERMISSION_LIST.isEmpty()) {
-            ActivityCompat.requestPermissions(requireActivity(), PERMISSION_LIST.toArray(new String[PERMISSION_LIST.size()]), PERMISSION_ALL);
+            requestPermissions(PERMISSION_LIST.toArray(new String[PERMISSION_LIST.size()]), PERMISSION_ALL);
             return false;
         }
         return true;
     }
 
+
+    private boolean checkPermissions(){
+        if (ActivityCompat.checkSelfPermission(getContext(),
+                android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(getContext(),
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+
+            //permissions granted
+            return true;
+
+
+        } else {
+
+
+            Toast.makeText(mContext, "Please Allow Microphone and Storage Permissions", Toast.LENGTH_LONG).show();
+
+
+            return false;
+        }
+    }
+
+
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         boolean record = false, storage = false;
+        Log.d(TAG, "onRequestPermissionsResult: BEFORE PERMISSION_ALL CASE : "+requestCode);
         switch (requestCode) {
             case PERMISSION_ALL: {
+
                 if (grantResults.length > 0) {
                     for (int i = 0; i < permissions.length; i++) {
                         if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
@@ -208,6 +236,7 @@ public class RecorderFragment extends Fragment {
                     }
                 }
                 if (record && storage) {
+                    Log.d(TAG, "onRequestPermissionsResult: Both permissions given");
                     setAudioRecorder();
                 }
             }
@@ -216,11 +245,32 @@ public class RecorderFragment extends Fragment {
 
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        Log.d(TAG, "onDestroyView: Called");
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         //here we save the current exact time in sharedpref and then when the app opens subtract it from
-        // that time and show on timer textview
+        // that time and show on timer textview3
+        if(isServiceRunningInForeground(requireActivity(), RecorderService.class)){
+            SharedPreferencesHelper.put(mContext, getString(R.string.timer_resume), Conversions.getTimeNow());
+        }
+
+        Log.d(TAG, "onDestroy: Called");
+
+
     }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop: Called");
+    }
+
+
 
 
     public static boolean isServiceRunningInForeground(Context context, Class<?> serviceClass) {
@@ -245,6 +295,7 @@ public class RecorderFragment extends Fragment {
     View.OnClickListener startBtnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+
             showRecordingUI();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -254,6 +305,8 @@ public class RecorderFragment extends Fragment {
             }
 
             showTimer();
+            throw new RuntimeException("Test Crash"); // Force a crash
+
         }
     };
 
@@ -261,6 +314,10 @@ public class RecorderFragment extends Fragment {
         @Override
         public void onClick(View v) {
 
+            //clear timeResume pref
+            if(SharedPreferencesHelper.get(mContext, getString(R.string.timer_resume), "") != null){
+                SharedPreferencesHelper.remove(mContext, getString(R.string.timer_resume));
+            }
 
             mContext.stopService(serviceIntent);
             //cancel count down timer

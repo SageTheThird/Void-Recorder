@@ -13,11 +13,19 @@
 
         <action
             android:id="@+id/action_RecorderFragment_to_RecordingsFragment"
-            app:destination="@id/RecordingsFragment" />
+            app:destination="@id/RecordingsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
 
         <action
             android:id="@+id/action_RecorderFragment_to_SettingsFragment"
-            app:destination="@id/SettingsFragment" />
+            app:destination="@id/SettingsFragment"
+            app:enterAnim="@anim/fragment_fade_enter"
+            app:exitAnim="@anim/fragment_close_exit"
+            app:popEnterAnim="@anim/fragment_fade_enter"
+            app:popExitAnim="@anim/fragment_close_exit" />
     </fragment>
 
 
@@ -29,7 +37,9 @@
 
         <action
             android:id="@+id/action_RecordingsFragment_to_RecorderFragment"
-            app:destination="@id/RecorderFragment" />
+            app:destination="@id/RecorderFragment"
+
+            />
 
 
     </fragment>

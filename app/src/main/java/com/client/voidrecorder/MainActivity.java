@@ -1,7 +1,10 @@
 package com.client.voidrecorder;
 
 import android.os.Bundle;
+import android.util.Log;
+
 import com.client.voidrecorder.R;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -9,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "RecorderActivity";
+
+    private FirebaseAnalytics mFirebaseAnalytics;
 
 
     @Override
@@ -18,7 +23,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
     }
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy: Activity");
+    }
 }

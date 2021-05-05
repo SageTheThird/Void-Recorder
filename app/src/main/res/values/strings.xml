@@ -21,4 +21,9 @@
     <string name="space_limit_dialog_pref">spaceLimitDialog</string>
 
 
+
+    <string name="timer_resume">timerResume</string>
+
+
+
 </resources>

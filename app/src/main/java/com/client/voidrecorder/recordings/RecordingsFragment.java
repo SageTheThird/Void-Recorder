@@ -223,6 +223,8 @@ public class RecordingsFragment extends Fragment {
     private void getRecordedClips(){
 
         File[] files = fileHandler.getFilesFromOutputFolder();
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+
 
 
         assert files != null;
@@ -238,29 +240,32 @@ public class RecordingsFragment extends Fragment {
             int fileSizeInBytes = Integer.parseInt(String.valueOf(file.length()));
             totalSizeOfFolderInBytes += fileSizeInBytes;
 
-//            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-//            mmr.setDataSource(mContext,uri);
-//            long millSecond = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-            long millSecond = 12351;
+            mmr.setDataSource(mContext,uri);
+            long millSecond = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+//            MediaPlayer mp = MediaPlayer.create(getActivity(), uri);
+//            long millSecond = mp.getDuration();
 
             recordingsList.add(new ModelRecordings(file.getName(), Conversions.timeConversion(millSecond), format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
 
+
         }
+
+        mmr.release();
 
         spaceLimitCheck();
 
     }
 
     /*Updates text on toolbar textView which shows size and no of recordings*/
-    private void updateSizeTextView(long size){
-        String sizeTemp = "Size : " +Conversions.humanReadableByteCountSI(size) + " (" + recordingsList.size() + ")";
+    private void updateSizeTextView(long folderSize, int noOfRecordings){
+        String sizeTemp = "Size : " +Conversions.humanReadableByteCountSI(folderSize) + " (" + noOfRecordings + ")";
         toolbarTextView.setText(sizeTemp);
     }
 
     /*Checks if the total space occupied by recordings has exceeded the max space allowed and deletes oldest files on confirm*/
     private void spaceLimitCheck() {
 
-        updateSizeTextView(totalSizeOfFolderInBytes);
+        updateSizeTextView(totalSizeOfFolderInBytes, recordingsList.size());
 
         //check if the total folder size exceeds the max allowed
         if(totalSizeOfFolderInBytes !=0 && totalSizeOfFolderInBytes >= MAX_ALLOWED_STORAGE){
@@ -307,7 +312,7 @@ public class RecordingsFragment extends Fragment {
 
                         showSpaceFreedDialog(noOfItemRemoved);
 
-                        updateSizeTextView(totalSizeOfFolderInBytes);
+                        updateSizeTextView(totalSizeOfFolderInBytes, recordingsList.size());
                         break;
                     }
                 }
@@ -539,11 +544,12 @@ public class RecordingsFragment extends Fragment {
                         Uri fileUri = recordingsList.get(position).uri;
                         Log.d(TAG, "onSwiped: File Uri : " + fileUri);
                         File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
+                        totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - fileToDelete.length();
                         //deletes file from internal storage and db as well
                         delete(recordingsList.get(position).getTitle(), fileToDelete);
-
                         recordingsList.remove(position);
                         adapter.notifyItemRemoved(position);
+                        updateSizeTextView(totalSizeOfFolderInBytes, recordingsList.size());
 
                     }
                 })

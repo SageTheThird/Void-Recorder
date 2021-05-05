@@ -19,40 +19,26 @@
         android:weightSum="100"
         >
 
-
-
-        <RelativeLayout
+        <include
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="70"
             android:gravity="center_vertical"
+            layout="@layout/snippet_meta_recording_list"
 
-            >
-
-            <include
-                layout="@layout/snippet_meta_recording_list"
-
-                />
-
-        </RelativeLayout>
+            />
 
 
 
 
-        <RelativeLayout
+        <include
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="30"
-            android:gravity="center"
+            android:gravity="center_vertical"
+            layout="@layout/snippet_buttons_recording_list"
+            />
 
-            >
-
-            <include
-                layout="@layout/snippet_buttons_recording_list"
-                />
-
-
-        </RelativeLayout>
 
 
 
