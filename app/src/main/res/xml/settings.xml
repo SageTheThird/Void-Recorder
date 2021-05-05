@@ -18,7 +18,7 @@
             android:key="@string/output_quality_pref"
             android:summary="Choose a quality for recordings"
             android:title="Audio Quality"
-            android:defaultValue="Medium Quality"
+            android:defaultValue="Medium"
             />
 
 
@@ -43,7 +43,7 @@
 
         <CheckBoxPreference
             android:key="@string/automatic_deletion_pref"
-            android:summary="While recording in background, it will delete files automatically to free up space for new recordings"
+            android:summary="While recording in background, it will delete files automatically to free up space for new recordings when it exceeds space limit"
             android:title="Automatic Deletion"
             android:defaultValue="false"
             />

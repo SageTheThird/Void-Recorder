@@ -26,6 +26,9 @@ public class App extends Application {
         //sets default values for settings
         PreferenceManager.setDefaultValues(this, R.xml.settings, false);
         createNotificationChannel();
+
+
+
     }
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

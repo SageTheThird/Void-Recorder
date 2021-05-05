@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.client.voidrecorder.R;
+
+import com.client.voidrecorder.models.Recording;
 import com.client.voidrecorder.utils.Conversions;
 
 import java.util.ArrayList;
@@ -18,10 +20,10 @@ import java.util.ArrayList;
 public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.viewHolder> {
 
     Context context;
-    ArrayList<ModelRecordings> recordingsList;
+    ArrayList<Recording> recordingsList;
     public OnItemClickListener onItemClickListener;
 
-    public RecordingsAdapter(Context context, ArrayList<ModelRecordings> recordingsList) {
+    public RecordingsAdapter(Context context, ArrayList<Recording> recordingsList) {
         this.context = context;
         this.recordingsList = recordingsList;
     }

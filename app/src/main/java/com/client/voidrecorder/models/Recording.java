@@ -1,7 +1,7 @@
-package com.client.voidrecorder.recordings;
+package com.client.voidrecorder.models;
 import android.net.Uri;
 
-public class ModelRecordings {
+public class Recording {
 
 
     String title;
@@ -12,7 +12,7 @@ public class ModelRecordings {
     Uri uri;
 
 
-    public ModelRecordings(String title, String duration, String date, long size, boolean saved, Uri uri) {
+    public Recording(String title, String duration, String date, long size, boolean saved, Uri uri) {
         this.title = title;
         this.duration = duration;
         this.date = date;

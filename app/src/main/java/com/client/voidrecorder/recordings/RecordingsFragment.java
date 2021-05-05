@@ -8,8 +8,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
-
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -20,21 +18,14 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
-
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
@@ -42,23 +33,17 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.db.DatabaseTransactions;
-import com.client.voidrecorder.db.RecordingDB;
+import com.client.voidrecorder.models.Recording;
 import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.FileHandler;
 import com.client.voidrecorder.utils.Paths;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -68,7 +53,7 @@ public class RecordingsFragment extends Fragment {
     public static int MAX_ALLOWED_STORAGE = 30 * 1000000;//30MB - default
 
 
-    ArrayList<ModelRecordings> recordingsList;
+    ArrayList<Recording> recordingsList;
     RecyclerView recyclerView;
     MediaPlayer mediaPlayer;
     double current_pos, total_duration;
@@ -245,7 +230,7 @@ public class RecordingsFragment extends Fragment {
 //            MediaPlayer mp = MediaPlayer.create(getActivity(), uri);
 //            long millSecond = mp.getDuration();
 
-            recordingsList.add(new ModelRecordings(file.getName(), Conversions.timeConversion(millSecond), format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
+            recordingsList.add(new Recording(file.getName(), Conversions.timeConversion(millSecond), format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
 
 
         }
@@ -355,7 +340,7 @@ public class RecordingsFragment extends Fragment {
             public void onSaveClick(final int pos, View v) {
 
                 //Prompt the user for a file rename, while the current filename is already entered into EditField
-                final ModelRecordings currentClip = recordingsList.get(pos);
+                final Recording currentClip = recordingsList.get(pos);
 
                 final View view = LayoutInflater.from(mContext).inflate(R.layout.save_dialog_layout, null);
 
@@ -376,9 +361,9 @@ public class RecordingsFragment extends Fragment {
                         String newFileName = renameEditText.getText().toString();
 
                         //here we rename the audio file and save the entry in db so that it doesn't get deleted automatically
-                        ModelRecordings curr_recording = recordingsList.get(pos);
+                        Recording curr_recording = recordingsList.get(pos);
 
-                        Log.d(TAG, "onSwiped: File Uri : " + curr_recording.uri);
+                        Log.d(TAG, "onSwiped: File Uri : " + curr_recording.getUri());
 
                         File from = new File(Paths.getOutputFolderPath() + curr_recording.getTitle());
                         File to = new File(Paths.getOutputFolderPath() +  newFileName );
@@ -398,9 +383,11 @@ public class RecordingsFragment extends Fragment {
                             if(!savedRecordingsSet.contains(curr_recording.getTitle())){
 
                                 savedRecordingsSet.add(curr_recording.getTitle());
-                                databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.uri.toString());
+                                databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.getUri().toString());
                                 recordingsList.get(pos).setSaved(true);
                                 adapter.notifyDataSetChanged();
+
+
 
                             }
 
@@ -437,7 +424,6 @@ public class RecordingsFragment extends Fragment {
             @Override
             public void onShareClick(int pos, View v) {
                 //Take the audio file and share it across multiple apps using intent
-                Toast.makeText(mContext, "Shared", Toast.LENGTH_LONG).show();
                 shareFile(recordingsList.get(pos).getUri().getPath());
 
             }
@@ -498,7 +484,6 @@ public class RecordingsFragment extends Fragment {
 
         @Override
         public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
-            Toast.makeText(mContext, "on Swiped ", Toast.LENGTH_SHORT).show();
 
             Log.d(TAG, "onSwiped: Swiped Title |: "+recordingsList.get(viewHolder.getAdapterPosition()).getTitle());
 
@@ -541,7 +526,7 @@ public class RecordingsFragment extends Fragment {
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         // Continue with delete operation
-                        Uri fileUri = recordingsList.get(position).uri;
+                        Uri fileUri = recordingsList.get(position).getUri();
                         Log.d(TAG, "onSwiped: File Uri : " + fileUri);
                         File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
                         totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - fileToDelete.length();

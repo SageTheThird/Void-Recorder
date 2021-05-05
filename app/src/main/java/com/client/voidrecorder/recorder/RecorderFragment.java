@@ -5,39 +5,27 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
-
 import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
-
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.SharedPreferencesHelper;
-
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
-
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class RecorderFragment extends Fragment {
 
@@ -51,6 +39,7 @@ public class RecorderFragment extends Fragment {
     private Intent serviceIntent;
     private Context mContext;
     private SharedPreferences sharedPreferences;
+
 
 
     @Override
@@ -94,7 +83,7 @@ public class RecorderFragment extends Fragment {
 
         }
 
-
+//        requireActivity().registerReceiver(mMessageReceiver,new IntentFilter("timer_tracking"));
 
     }
 
@@ -202,7 +191,6 @@ public class RecorderFragment extends Fragment {
         } else {
 
 
-            Toast.makeText(mContext, "Please Allow Microphone and Storage Permissions", Toast.LENGTH_LONG).show();
 
 
             return false;
@@ -305,10 +293,16 @@ public class RecorderFragment extends Fragment {
             }
 
             showTimer();
-            throw new RuntimeException("Test Crash"); // Force a crash
+
+
 
         }
     };
+
+
+
+
+
 
     View.OnClickListener stopBtnClickListener = new View.OnClickListener() {
         @Override
@@ -359,7 +353,6 @@ public class RecorderFragment extends Fragment {
         @Override
         public void onClick(View v) {
 
-            Toast.makeText(mContext, "Settings Clicked", Toast.LENGTH_LONG).show();
             NavHostFragment.findNavController(RecorderFragment.this)
                     .navigate(R.id.action_RecorderFragment_to_SettingsFragment);
         }
@@ -367,4 +360,26 @@ public class RecorderFragment extends Fragment {
 
 
     };
+
+
+//    BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+//        @SuppressLint("DefaultLocale")
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//
+//            Toast.makeText(mContext, "broad", Toast.LENGTH_LONG).show();
+//
+//            long millisUntilFinished = intent.getLongExtra("timer", 0);
+//
+////                String counter = String.format("%02d:%02d:%02d",
+////                        TimeUnit.MILLISECONDS.toHours(millisUntilFinished),
+////                        TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished),
+////                        TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
+////                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)));
+//
+//
+//            Log.d(TAG, "onReceive: Timer In Recorder Fragment : "+ millisUntilFinished);
+////                timerTextView.setText(get);
+//        }
+//    };
 }

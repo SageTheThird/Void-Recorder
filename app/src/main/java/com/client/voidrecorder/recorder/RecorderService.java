@@ -7,10 +7,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.PreferenceManager;
 
 import android.util.Log;
@@ -18,7 +20,7 @@ import android.util.Log;
 import com.client.voidrecorder.MainActivity;
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.db.DatabaseTransactions;
-import com.client.voidrecorder.recordings.ModelRecordings;
+
 import com.client.voidrecorder.utils.FileHandler;
 import com.client.voidrecorder.utils.Paths;
 
@@ -54,6 +56,9 @@ public class RecorderService extends Service {
     DatabaseTransactions databaseTransactions;
     private static HashSet<String> savedRecordingsSet;
 
+    //countdownTimer vars
+    CountDownTimer countDownTimer;
+
     public RecorderService() {
 
 
@@ -67,6 +72,7 @@ public class RecorderService extends Service {
         try {
             //shows a silent notification and start the recorder
             showRecordingNotification();
+
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
             startRecorder();
@@ -88,6 +94,27 @@ public class RecorderService extends Service {
         }
 
         return START_STICKY;
+    }
+
+    private void startTimer() {
+        countDownTimer = new CountDownTimer(Long.MAX_VALUE, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+
+                Intent intent = new Intent("timer_tracking");
+                intent.putExtra("timer", millisUntilFinished);
+                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                Log.d(TAG, "onTick: Timer In Service : "+millisUntilFinished);
+//                second++;
+            }
+
+            public void onFinish() {
+                stopSelf();
+
+
+            }
+        }.start();;
+
     }
 
     private void fetchSavedRecordings() {
@@ -313,6 +340,7 @@ public class RecorderService extends Service {
         try {
 
             stopRecorder();
+            countDownTimer.cancel();
 
             if(databaseTransactions != null){
                 databaseTransactions.closeDB();

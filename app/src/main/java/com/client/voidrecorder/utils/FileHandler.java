@@ -7,7 +7,6 @@ import android.util.Log;
 
 import com.client.voidrecorder.App;
 import com.client.voidrecorder.db.DatabaseTransactions;
-import com.client.voidrecorder.recordings.ModelRecordings;
 
 import java.io.File;
 import java.text.SimpleDateFormat;

@@ -9,6 +9,8 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import com.client.voidrecorder.models.RecordingDB;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;

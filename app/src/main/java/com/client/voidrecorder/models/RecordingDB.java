@@ -1,4 +1,4 @@
-package com.client.voidrecorder.db;
+package com.client.voidrecorder.models;
 
 import android.net.Uri;
 
