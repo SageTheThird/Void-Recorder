@@ -67,9 +67,9 @@
     <LinearLayout
         android:id="@+id/showProgress"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="55dp"
         android:layout_alignParentBottom="true"
-        android:background="@color/background"
+        android:background="@drawable/player_round_background"
         android:gravity="center"
         android:orientation="horizontal">
 

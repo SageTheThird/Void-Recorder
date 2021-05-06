@@ -23,6 +23,7 @@
 
 
     <string name="timer_resume">timerResume</string>
+    <string name="service_recording">The service is recording in the background.</string>
 
 
 

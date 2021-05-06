@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:cardCornerRadius="12dp"
     android:layout_marginTop="20dp"
     android:layout_marginStart="10dp"
     android:layout_marginEnd="10dp"
-    android:background="@color/white"
-    android:backgroundTint="@color/white"
     >
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:weightSum="100"
+        android:background="@drawable/recordings_round_background"
         >
 
         <include
@@ -30,14 +28,47 @@
 
 
 
+        <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
-        <include
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="30"
-            android:gravity="center_vertical"
-            layout="@layout/snippet_buttons_recording_list"
-            />
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:padding="10dp"
+
+            >
+
+
+
+
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/ic_baseline_save_24"
+                android:id="@+id/saveBtn"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/shareBtn"
+                />
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/ic_baseline_share_24"
+                android:id="@+id/shareBtn"
+                app:layout_constraintStart_toEndOf="@id/saveBtn"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+
+
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
 
 
@@ -45,4 +76,4 @@
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

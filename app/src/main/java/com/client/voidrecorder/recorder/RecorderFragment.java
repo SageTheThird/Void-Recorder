@@ -1,11 +1,14 @@
 package com.client.voidrecorder.recorder;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import android.Manifest;
@@ -15,24 +18,29 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import com.client.voidrecorder.R;
+import com.client.voidrecorder.models.Recording;
 import com.client.voidrecorder.utils.Conversions;
+import com.client.voidrecorder.utils.Paths;
 import com.client.voidrecorder.utils.SharedPreferencesHelper;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import android.os.CountDownTimer;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
 import java.util.ArrayList;
 
 public class RecorderFragment extends Fragment {
 
     private static final String TAG = "RecorderActivity";
 
-    private TextView timerTextView;
-    private ImageView startBtn, stopBtn, recordingsBtn, settingsBtn;
+    private TextView timerTextView,serviceStatusTv,recordTV;
+    private ImageView startBtn, stopBtn, recordingsBtn, settingsBtn,infoBtn;
     private CountDownTimer countDownTimer;
     private int second = -1, minute, hour;// timer vars
     public static final int PERMISSION_ALL = 0;
@@ -77,6 +85,10 @@ public class RecorderFragment extends Fragment {
                 //when app is closed completely and then opened again, showRecording, ResumeTimer
                 Log.d(TAG, "onCreate: Service is running, toggle to recording");
                 showRecordingUI();
+                serviceStatusTv.setVisibility(View.VISIBLE);
+                serviceStatusTv.setText(getString(R.string.service_recording));
+
+
                 Log.d(TAG, "onViewCreated: Time Difference : "+Conversions.getTimeDifference((String) SharedPreferencesHelper.get(mContext, getString(R.string.timer_resume), ""), Conversions.getTimeNow()));;
 
             }
@@ -97,6 +109,10 @@ public class RecorderFragment extends Fragment {
         stopBtn =  parentView.findViewById(R.id.stop);
         recordingsBtn = parentView.findViewById(R.id.recordings);
         settingsBtn =  parentView.findViewById(R.id.settingsBtn);
+        serviceStatusTv =  parentView.findViewById(R.id.serviceStatusTV);
+        recordTV =  parentView.findViewById(R.id.recordTV);
+        infoBtn =  parentView.findViewById(R.id.infoBtn);
+        serviceStatusTv.setVisibility(View.INVISIBLE);
     }
 
     /* */
@@ -111,6 +127,7 @@ public class RecorderFragment extends Fragment {
         stopBtn.setOnClickListener(stopBtnClickListener);
         recordingsBtn.setOnClickListener(recordingsBtnClickListener);
         settingsBtn.setOnClickListener(settingsBtnClickListener);
+        infoBtn.setOnClickListener(infoBtnClickListener);
 
     }
 
@@ -119,6 +136,8 @@ public class RecorderFragment extends Fragment {
     private void showRecordingUI() {
         startBtn.setEnabled(false);
         recordingsBtn.setEnabled(false);
+        startBtn.setVisibility(View.INVISIBLE);
+        recordTV.setVisibility(View.INVISIBLE);
         stopBtn.setEnabled(true);
         stopBtn.setBackgroundResource(R.drawable.round_shape);
         stopBtn.setImageResource(R.drawable.ic_stop_black_35dp);
@@ -320,6 +339,8 @@ public class RecorderFragment extends Fragment {
             }
             startBtn.setEnabled(true);
             recordingsBtn.setEnabled(true);
+            startBtn.setVisibility(View.VISIBLE);
+            recordTV.setVisibility(View.VISIBLE);
             stopBtn.setEnabled(false);
             stopBtn.setBackgroundResource(R.drawable.normal_background);
             stopBtn.setImageResource(R.drawable.noraml_stop);
@@ -360,6 +381,48 @@ public class RecorderFragment extends Fragment {
 
 
     };
+
+    View.OnClickListener infoBtnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+
+            showSelectedOptionsDialog();
+        }
+
+
+
+    };
+
+    private void showSelectedOptionsDialog() {
+
+        final View view = LayoutInflater.from(mContext).inflate(R.layout.selected_settings_dialog_layout, null);
+
+        AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
+        alertDialog.setTitle("Selected Settings");
+        alertDialog.setCancelable(false);
+
+
+        final TextView renameEditText = view.findViewById(R.id.etComments);
+        String settingsSelected = "Format : "+sharedPreferences.getString(getString(R.string.output_format_pref), "") + "\nQuality : "+sharedPreferences.getString(getString(R.string.output_quality_pref), "") + "\nDuration : "+sharedPreferences.getString(getString(R.string.max_duration), "") + " Minutes\nSpace Limit : "+sharedPreferences.getString(getString(R.string.max_space_pref), "")+ " MB" ;
+
+        renameEditText.setText(settingsSelected);
+
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Close", new DialogInterface.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+
+                dialogInterface.dismiss();
+
+            }
+        });
+
+
+
+        alertDialog.setView(view);
+        alertDialog.show();
+    }
 
 
 //    BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {

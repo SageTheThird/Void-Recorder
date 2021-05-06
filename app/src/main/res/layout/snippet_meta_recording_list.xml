@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
 
-    android:padding="10dp">
+    android:padding="13dp">
 
 
 
@@ -14,11 +14,12 @@
         android:layout_height="25sp"
         android:ellipsize="end"
         android:textColor="@color/colorAccent"
-        android:textSize="16sp"
+        android:textSize="17sp"
         android:text="Recording from 3 minutes ago"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        android:textStyle="bold"
         />
 
 

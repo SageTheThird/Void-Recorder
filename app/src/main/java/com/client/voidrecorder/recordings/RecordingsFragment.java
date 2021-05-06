@@ -243,7 +243,7 @@ public class RecordingsFragment extends Fragment {
 
     /*Updates text on toolbar textView which shows size and no of recordings*/
     private void updateSizeTextView(long folderSize, int noOfRecordings){
-        String sizeTemp = "Size : " +Conversions.humanReadableByteCountSI(folderSize) + " (" + noOfRecordings + ")";
+        String sizeTemp = Conversions.humanReadableByteCountSI(folderSize) + "/" + Conversions.humanReadableByteCountSI(MAX_ALLOWED_STORAGE) + " (" + noOfRecordings + ")";
         toolbarTextView.setText(sizeTemp);
     }
 

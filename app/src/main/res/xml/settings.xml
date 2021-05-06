@@ -7,7 +7,7 @@
             android:entries="@array/outputFormats"
             android:entryValues="@array/OutputFormatValues"
             android:key="@string/output_format_pref"
-            android:summary="Select an output format for recordings"
+            android:summary="Select an output format for recordings : %s"
             android:title="Output format"
             android:defaultValue="m4a"
             />
@@ -52,7 +52,7 @@
             android:key="@string/space_limit_dialog_pref"
             android:summary="Enables space limit exceeded warning when you go to recordings"
             android:title="Space Limit Exceeded Dialog"
-            android:defaultValue="false"
+            android:defaultValue="true"
             />
 
 
