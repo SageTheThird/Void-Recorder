@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "514349688523",
+    "project_id": "void-recorder",
+    "storage_bucket": "void-recorder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:514349688523:android:216a0cb6c6cc540a2b9d4e",
+        "android_client_info": {
+          "package_name": "com.client.voidrecorder"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "514349688523-mj1j2fdq75s4fkmm7goq9pgqh157j2um.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYxE8joXxEePuDEIqgFunAFpyPK36BYQw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "514349688523-mj1j2fdq75s4fkmm7goq9pgqh157j2um.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

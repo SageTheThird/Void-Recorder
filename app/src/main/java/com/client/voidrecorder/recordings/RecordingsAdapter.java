@@ -70,10 +70,22 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
     }
 
     public String titleWithoutExt(String str) {
+
+        String ext = str.substring(str.length() - 4);
+
         if (str != null && str.length() > 0) {
-            str = str.substring(0, str.length() -4);
+            str = str.substring(0, str.length() -6);
         }
+
+        str = str + ext;
+//        assert str != null;
+//        if(str.contains("Lo")) { return str.replace("Lo", "");}
+//        if(str.contains("Me")) { return str.replace("Me", "");}
+//        if(str.contains("Hi")) { return str.replace("Hi", "");}
+
+
         return str;
+
     }
 
 

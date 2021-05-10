@@ -8,9 +8,9 @@
 
     <!--Store sampleRates in values-->
     <string-array name="AudioQualityValues">
-        <item>High</item>
-        <item>Medium</item>
-        <item>Low</item>
+        <item>Hi</item>
+        <item>Me</item>
+        <item>Lo</item>
     </string-array>
 
 

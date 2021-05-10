@@ -55,6 +55,7 @@ public class RecorderService extends Service {
     public static int MAX_ALLOWED_STORAGE = 30 * 1000000;//30MB - default
     DatabaseTransactions databaseTransactions;
     private static HashSet<String> savedRecordingsSet;
+    private static String OUTPUT_QUALITY = "";
 
     //countdownTimer vars
     CountDownTimer countDownTimer;
@@ -74,6 +75,7 @@ public class RecorderService extends Service {
             showRecordingNotification();
 
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+            OUTPUT_QUALITY = sharedPreferences.getString(getString(R.string.output_quality_pref), "");
 
             startRecorder();
 
@@ -96,14 +98,14 @@ public class RecorderService extends Service {
         return START_STICKY;
     }
 
-    private void startTimer() {
+    private void startTimer(Intent intent) {
         countDownTimer = new CountDownTimer(Long.MAX_VALUE, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
 
-                Intent intent = new Intent("timer_tracking");
                 intent.putExtra("timer", millisUntilFinished);
-                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+//                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                sendBroadcast(intent);
                 Log.d(TAG, "onTick: Timer In Service : "+millisUntilFinished);
 //                second++;
             }
@@ -211,7 +213,7 @@ public class RecorderService extends Service {
 
         File folder = new File(Paths.getOutputFolder());
 
-        recordingName = "REC " + dateTimeNow() + "." + EXTENSION;
+        recordingName = "REC " + dateTimeNow() +  OUTPUT_QUALITY + "." + EXTENSION;
 
         recordingFullPath = folder.getAbsolutePath() + File.separator + recordingName;
 

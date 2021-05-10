@@ -16,9 +16,9 @@
             android:entries="@array/AudioQuality"
             android:entryValues="@array/AudioQualityValues"
             android:key="@string/output_quality_pref"
-            android:summary="Choose a quality for recordings"
+            android:summary="Choose a quality for recordings : %s"
             android:title="Audio Quality"
-            android:defaultValue="Medium"
+            android:defaultValue="Me"
             />
 
 
@@ -29,14 +29,14 @@
 
         <EditTextPreference
             android:key="@string/max_space_pref"
-            android:summary="Set the max space allowed in MB for the output folder"
+            android:summary="Set the max space allowed in MB for the output folder : %s"
             android:title="Space Limit"
             android:defaultValue="10"
             />
 
         <EditTextPreference
             android:key="@string/max_duration"
-            android:summary="Set the max duration for each recording in minutes"
+            android:summary="Set the max duration for each recording in minutes : %s"
             android:title="Max Duration"
             android:defaultValue="3"
             />

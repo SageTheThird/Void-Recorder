@@ -1,12 +1,15 @@
 package com.client.voidrecorder.recordings;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import android.Manifest;
 import android.app.AlertDialog;
@@ -36,21 +39,29 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.db.DatabaseTransactions;
 import com.client.voidrecorder.models.Recording;
+import com.client.voidrecorder.recorder.RecorderService;
 import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.FileHandler;
 import com.client.voidrecorder.utils.Paths;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class RecordingsFragment extends Fragment {
 
     private static final String TAG = "RecordingsActivity";
     public static int MAX_ALLOWED_STORAGE = 30 * 1000000;//30MB - default
+    public static String OUTPUT_QUALITY = "m4a";//30MB - default
 
 
     ArrayList<Recording> recordingsList;
@@ -87,6 +98,8 @@ public class RecordingsFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_recordings, container, false);
     }
 
+
+
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -94,6 +107,7 @@ public class RecordingsFragment extends Fragment {
         fileHandler = new FileHandler();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
         MAX_ALLOWED_STORAGE = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(mContext.getString(R.string.max_space_pref), ""))) * 1000000;
+        OUTPUT_QUALITY = Objects.requireNonNull(sharedPreferences.getString(mContext.getString(R.string.output_quality_pref), ""));
 
 
         if (checkPermission()) {
@@ -105,6 +119,8 @@ public class RecordingsFragment extends Fragment {
 
             setupRecordings();
         }
+
+
 
 
 
@@ -208,8 +224,9 @@ public class RecordingsFragment extends Fragment {
     private void getRecordedClips(){
 
         File[] files = fileHandler.getFilesFromOutputFolder();
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+//        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 
+        SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 
 
         assert files != null;
@@ -220,24 +237,80 @@ public class RecordingsFragment extends Fragment {
             Uri uri = Uri.fromFile(file);
 
             Date date = new Date(file.lastModified());
-            SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 
             int fileSizeInBytes = Integer.parseInt(String.valueOf(file.length()));
             totalSizeOfFolderInBytes += fileSizeInBytes;
 
-            mmr.setDataSource(mContext,uri);
-            long millSecond = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+            Log.d(TAG, "getRecordedClips: File Size : "+file.length());
+            Log.d(TAG, "getRecordedClips: File Name : "+file.getName());
+            //High m4a - 32,207
+            //Medium m4a - 16289
+            //Low m4a - 8,244
+
+            //Low 3gp - 1865
+
+//            mmr.setDataSource(mContext,uri);
+//            long millSecond = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+            String millSecond = getFormattedDurationFromSeconds(TimeUnit.SECONDS.toMillis(getSecondsFromSize(file.length(), getQualityFromTitle(file.getName()), file.getName().substring(file.getName().length() -3))));
 //            MediaPlayer mp = MediaPlayer.create(getActivity(), uri);
 //            long millSecond = mp.getDuration();
 
-            recordingsList.add(new Recording(file.getName(), Conversions.timeConversion(millSecond), format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
+
+            recordingsList.add(new Recording(file.getName(), millSecond, format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
 
 
         }
 
-        mmr.release();
+//        mmr.release();
 
         spaceLimitCheck();
+
+    }
+
+    private String getQualityFromTitle(String fileName) {
+
+        String withoutExt = fileName.substring(fileName.length()-6);
+        Log.d(TAG, "getQualityFromTitle: withoutExt : "+withoutExt);
+        String quality  = withoutExt.substring(0, withoutExt.length() -4);
+        Log.d(TAG, "getQualityFromTitle: quality : "+quality);
+
+        if(quality.equals("Hi")){
+            return "Hi";
+        }else if(quality.equals("Me")){
+            return "Me";
+        }else {
+            return "Lo";
+        }
+
+    }
+
+
+    private long getSecondsFromSize(long sizeInBytes, String quality, String extension){
+
+        if(extension.equals("m4a") || extension.equals("mp3")){
+            switch (quality){
+                case "Hi":
+                    return sizeInBytes / 32207;
+                case "Me":
+                    return sizeInBytes / 16289;
+                case "Lo":
+                    return sizeInBytes / 8244;
+                default:
+                    return sizeInBytes;
+            }
+        }else {
+            return sizeInBytes / 1865;
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private String getFormattedDurationFromSeconds(long milliSeconds){
+
+        return  String.format("%02d:%02d",
+                TimeUnit.MILLISECONDS.toMinutes(milliSeconds),
+                TimeUnit.MILLISECONDS.toSeconds(milliSeconds) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliSeconds))
+        );
 
     }
 
@@ -424,19 +497,28 @@ public class RecordingsFragment extends Fragment {
             @Override
             public void onShareClick(int pos, View v) {
                 //Take the audio file and share it across multiple apps using intent
-                shareFile(recordingsList.get(pos).getUri().getPath());
+                try {
+
+                    shareFile(new File(Objects.requireNonNull(recordingsList.get(pos).getUri().getPath())));
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
 
             }
         });
     }
 
-    private void shareFile(String filePath){
 
-        Uri uri = Uri.parse(filePath);
+    private void shareFile(File filePath) {
+
+        Uri uri = FileProvider.getUriForFile(mContext, mContext.getApplicationContext().getPackageName() + ".provider", filePath);
+//        Uri uri = Uri.fromFile(filePath);
         Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType("audio/3gpp");
+        share.setType("audio/*");
         share.putExtra(Intent.EXTRA_STREAM, uri);
         startActivity(Intent.createChooser(share, "Share Sound File"));
+
     }
 
     public boolean checkPermission() {
@@ -556,9 +638,7 @@ public class RecordingsFragment extends Fragment {
         new AlertDialog.Builder(mContext)
                 .setTitle("Max Limit Reached")
                 .setMessage("Do you want to free up space by deleting the oldest non-saved recordings?\n" +
-                        "\nNote: You can disable this alert by turning off automatic deletion or increasing max space allowed from settings." +
-                        "" +
-                        "")
+                        "\nNote: You can disable this alert from settings.")
 
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.

@@ -20,7 +20,7 @@
         <include
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="70"
+            android:layout_weight="75"
             android:gravity="center_vertical"
             layout="@layout/snippet_meta_recording_list"
 
@@ -32,7 +32,7 @@
 
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="30"
+            android:layout_weight="25"
             xmlns:app="http://schemas.android.com/apk/res-auto"
             android:padding="10dp"
 
@@ -51,6 +51,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/shareBtn"
+                android:layout_marginEnd="7dp"
                 />
 
             <ImageView

@@ -61,8 +61,8 @@
         android:layout_below="@id/toolbarLL"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="42dp"
-        android:layout_marginTop="2dp"/>
+        android:layout_marginTop="2dp"
+        android:layout_above="@id/showProgress"/>
 
     <LinearLayout
         android:id="@+id/showProgress"
@@ -118,7 +118,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginStart="2dp"
-            android:layout_marginEnd="2dp"
+            android:layout_marginEnd="5dp"
             android:textSize="10dp"
             android:text="00:00"
             android:textColor="@color/white"/>

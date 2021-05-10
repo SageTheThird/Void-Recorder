@@ -318,9 +318,12 @@ public class RecorderFragment extends Fragment {
         }
     };
 
-
-
-
+//    private void getCountDownFromService() {
+//        if(serviceIntent.getExtras() != null){
+//            long millisUntilFinished = serviceIntent.getLongExtra("timer",30000);
+//            Log.d(TAG, "getCountDownFromService: "+millisUntilFinished);
+//        }
+//    }
 
 
     View.OnClickListener stopBtnClickListener = new View.OnClickListener() {
@@ -393,7 +396,7 @@ public class RecorderFragment extends Fragment {
 
     };
 
-    private void showSelectedOptionsDialog() {
+    private void showSelectedOptionsDialog()  {
 
         final View view = LayoutInflater.from(mContext).inflate(R.layout.selected_settings_dialog_layout, null);
 
