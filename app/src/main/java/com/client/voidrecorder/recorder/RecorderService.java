@@ -12,7 +12,6 @@ import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.PreferenceManager;
 
 import android.util.Log;
@@ -29,7 +28,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -77,10 +75,13 @@ public class RecorderService extends Service {
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
             OUTPUT_QUALITY = sharedPreferences.getString(getString(R.string.output_quality_pref), "");
 
-            startRecorder();
 
+            startRecorder();
+            startTimer();
+
+
+            //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
             if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
-                //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
 
                 fetchSavedRecordings();
 
@@ -98,22 +99,21 @@ public class RecorderService extends Service {
         return START_STICKY;
     }
 
-    private void startTimer(Intent intent) {
+    private void startTimer() {
+        Intent intent = new Intent("CountDownIntent");
+        final long[] milliSeconds = {0};
         countDownTimer = new CountDownTimer(Long.MAX_VALUE, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
 
-                intent.putExtra("timer", millisUntilFinished);
-//                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+                milliSeconds[0] = milliSeconds[0] + 1000;
+                intent.putExtra("timer", milliSeconds[0]);
                 sendBroadcast(intent);
-                Log.d(TAG, "onTick: Timer In Service : "+millisUntilFinished);
-//                second++;
+                Log.d(TAG, "onTick: Timer In Service : "+milliSeconds[0]);
             }
 
             public void onFinish() {
                 stopSelf();
-
-
             }
         }.start();;
 
@@ -243,6 +243,7 @@ public class RecorderService extends Service {
 
     }
 
+
     private void setOutputFormat(String format) {
 
         switch (format){
@@ -280,17 +281,17 @@ public class RecorderService extends Service {
     private void setAudioQuality(String quality) {
 
         switch (quality){
-            case "High":
+            case "Hi":
                 RECORDER_ENCODING_BIT_RATE = 2 * 128000;
 
                 break;
-            case "Medium":
+            case "Me":
 
                 RECORDER_ENCODING_BIT_RATE = 128000;
 
 
                 break;
-            case "Low":
+            case "Lo":
 
                 RECORDER_ENCODING_BIT_RATE = 64000;
 
@@ -342,7 +343,7 @@ public class RecorderService extends Service {
         try {
 
             stopRecorder();
-            countDownTimer.cancel();
+            countDownTimer.cancel();//cancel timer
 
             if(databaseTransactions != null){
                 databaseTransactions.closeDB();

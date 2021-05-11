@@ -224,7 +224,6 @@ public class RecordingsFragment extends Fragment {
     private void getRecordedClips(){
 
         File[] files = fileHandler.getFilesFromOutputFolder();
-//        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
 
         SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 
@@ -241,78 +240,19 @@ public class RecordingsFragment extends Fragment {
             int fileSizeInBytes = Integer.parseInt(String.valueOf(file.length()));
             totalSizeOfFolderInBytes += fileSizeInBytes;
 
-            Log.d(TAG, "getRecordedClips: File Size : "+file.length());
-            Log.d(TAG, "getRecordedClips: File Name : "+file.getName());
-            //High m4a - 32,207
-            //Medium m4a - 16289
-            //Low m4a - 8,244
-
-            //Low 3gp - 1865
-
-//            mmr.setDataSource(mContext,uri);
-//            long millSecond = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-            String millSecond = getFormattedDurationFromSeconds(TimeUnit.SECONDS.toMillis(getSecondsFromSize(file.length(), getQualityFromTitle(file.getName()), file.getName().substring(file.getName().length() -3))));
-//            MediaPlayer mp = MediaPlayer.create(getActivity(), uri);
-//            long millSecond = mp.getDuration();
-
+            //takes the size of the clip and derives the duration from it
+            String millSecond = Conversions.getFormattedDurationFromSeconds(TimeUnit.SECONDS.toMillis(Conversions.getSecondsFromSize(file.length(), Conversions.getQualityFromTitle(file.getName()), file.getName().substring(file.getName().length() -3))));
 
             recordingsList.add(new Recording(file.getName(), millSecond, format.format(date), fileSizeInBytes, isRecordingSaved(file.getName()), uri));
 
 
         }
 
-//        mmr.release();
-
         spaceLimitCheck();
 
     }
 
-    private String getQualityFromTitle(String fileName) {
 
-        String withoutExt = fileName.substring(fileName.length()-6);
-        Log.d(TAG, "getQualityFromTitle: withoutExt : "+withoutExt);
-        String quality  = withoutExt.substring(0, withoutExt.length() -4);
-        Log.d(TAG, "getQualityFromTitle: quality : "+quality);
-
-        if(quality.equals("Hi")){
-            return "Hi";
-        }else if(quality.equals("Me")){
-            return "Me";
-        }else {
-            return "Lo";
-        }
-
-    }
-
-
-    private long getSecondsFromSize(long sizeInBytes, String quality, String extension){
-
-        if(extension.equals("m4a") || extension.equals("mp3")){
-            switch (quality){
-                case "Hi":
-                    return sizeInBytes / 32207;
-                case "Me":
-                    return sizeInBytes / 16289;
-                case "Lo":
-                    return sizeInBytes / 8244;
-                default:
-                    return sizeInBytes;
-            }
-        }else {
-            return sizeInBytes / 1865;
-        }
-    }
-
-    @SuppressLint("DefaultLocale")
-    private String getFormattedDurationFromSeconds(long milliSeconds){
-
-        return  String.format("%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(milliSeconds),
-                TimeUnit.MILLISECONDS.toSeconds(milliSeconds) -
-                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliSeconds))
-        );
-
-    }
 
     /*Updates text on toolbar textView which shows size and no of recordings*/
     private void updateSizeTextView(long folderSize, int noOfRecordings){
@@ -577,10 +517,7 @@ public class RecordingsFragment extends Fragment {
         }
     };
 
-
-
-
-    /*Deletes the file from internal storage and db*/
+    /*Deletes the file from internal storage and db(if present)*/
     private void delete(String title,  File fileToDelete){
         Log.d(TAG, "onSwiped: Key Lookup : "+title);
 
