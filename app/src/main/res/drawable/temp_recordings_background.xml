@@ -1,0 +1,5 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/recording_selected_round_background" android:state_selected="true"/>
+    <item android:drawable="@drawable/recordings_round_background" android:state_focused="true"/>
+    <item android:drawable="@drawable/recordings_round_background" android:state_first="true"/>
+</selector>
