@@ -24,6 +24,9 @@
 
     <string name="timer_resume">timerResume</string>
     <string name="service_recording">The service is recording in the background.</string>
+    <string name="dummy_duration">00:00</string>
+    <string name="dummy_size">0 Kb</string>
+    <string name="dummy_timer">00:00:00</string>
 
 
 

@@ -21,6 +21,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.utils.Conversions;
+import com.client.voidrecorder.utils.ServiceUtil;
 import com.client.voidrecorder.utils.SharedPreferencesHelper;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -84,7 +85,7 @@ public class RecorderFragment extends Fragment {
             Log.d(TAG, "onViewCreated: Permissions Granted");
             setAudioRecorder();
 
-            if (isServiceRunningInForeground(mContext, RecorderService.class)) {
+            if (ServiceUtil.isServiceRunningInForeground(mContext, RecorderService.class)) {
                 //when app is closed completely and then opened again, showRecording, ResumeTimer
                 showRecordingUI();
                 serviceStatusTv.setVisibility(View.VISIBLE);
@@ -103,29 +104,27 @@ public class RecorderFragment extends Fragment {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         Log.d(TAG, "onRequestPermissionsResult: called");
         boolean record = false,storage =  false;
-        switch (requestCode) {
-            case  PERMISSION_ALL: {
-                if (grantResults.length > 0) {
-                    for (int i = 0; i < permissions.length; i++) {
-                        if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
-                            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                                record = true;
-                            } else {
-                                Toast.makeText(mContext, "Please allow Microphone permission", Toast.LENGTH_LONG).show();
-                            }
-                        } else if (permissions[i].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                                storage = true;
-                            } else {
-                                Toast.makeText(mContext, "Please allow Storage permission", Toast.LENGTH_LONG).show();
-                            }
-
+        if (requestCode == PERMISSION_ALL) {
+            if (grantResults.length > 0) {
+                for (int i = 0; i < permissions.length; i++) {
+                    if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
+                        if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                            record = true;
+                        } else {
+                            Toast.makeText(mContext, "Please allow Microphone permission", Toast.LENGTH_LONG).show();
                         }
+                    } else if (permissions[i].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                            storage = true;
+                        } else {
+                            Toast.makeText(mContext, "Please allow Storage permission", Toast.LENGTH_LONG).show();
+                        }
+
                     }
                 }
-                if (record && storage) {
-                    setAudioRecorder();
-                }
+            }
+            if (record && storage) {
+                setAudioRecorder();
             }
         }
     }
@@ -190,7 +189,7 @@ public class RecorderFragment extends Fragment {
             PERMISSION_LIST.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
         if (!PERMISSION_LIST.isEmpty()) {
-            requestPermissions(PERMISSION_LIST.toArray(new String[PERMISSION_LIST.size()]), PERMISSION_ALL);
+            requestPermissions(PERMISSION_LIST.toArray(new String[0]), PERMISSION_ALL);
         }
     }
 
@@ -223,20 +222,6 @@ public class RecorderFragment extends Fragment {
     public void onStop() {
         super.onStop();
         Log.d(TAG, "onStop: Called");
-    }
-
-
-    public static boolean isServiceRunningInForeground(Context context, Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                if (service.foreground) {
-                    return true;
-                }
-
-            }
-        }
-        return false;
     }
 
 
@@ -283,7 +268,7 @@ public class RecorderFragment extends Fragment {
             stopBtn.setImageResource(R.drawable.noraml_stop);
             recordingsBtn.setBackgroundResource(R.drawable.round_shape);
             recordingsBtn.setImageResource(R.drawable.ic_menu_black_35dp);
-            timerTextView.setText("00:00:00");
+            timerTextView.setText(mContext.getString(R.string.dummy_timer));
 
             if(serviceStatusTv.getVisibility() == View.VISIBLE){
                 serviceStatusTv.setVisibility(View.INVISIBLE);
@@ -308,28 +293,10 @@ public class RecorderFragment extends Fragment {
         }
     };
 
-    View.OnClickListener settingsBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
+    View.OnClickListener settingsBtnClickListener = v -> NavHostFragment.findNavController(RecorderFragment.this)
+            .navigate(R.id.action_RecorderFragment_to_SettingsFragment);
 
-            NavHostFragment.findNavController(RecorderFragment.this)
-                    .navigate(R.id.action_RecorderFragment_to_SettingsFragment);
-        }
-
-
-
-    };
-
-    View.OnClickListener infoBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-            showSelectedOptionsDialog();
-        }
-
-
-
-    };
+    View.OnClickListener infoBtnClickListener = v -> showSelectedOptionsDialog();
 
     private void showSelectedOptionsDialog()  {
 
@@ -344,20 +311,7 @@ public class RecorderFragment extends Fragment {
         String settingsSelected = "Format : "+sharedPreferences.getString(getString(R.string.output_format_pref), "") + "\nQuality : "+sharedPreferences.getString(getString(R.string.output_quality_pref), "") + "\nDuration : "+sharedPreferences.getString(getString(R.string.max_duration), "") + " Minutes\nSpace Limit : "+sharedPreferences.getString(getString(R.string.max_space_pref), "")+ " MB" ;
 
         renameEditText.setText(settingsSelected);
-
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Close", new DialogInterface.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-
-
-                dialogInterface.dismiss();
-
-            }
-        });
-
-
-
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Close", (dialogInterface, i) -> dialogInterface.dismiss());
         alertDialog.setView(view);
         alertDialog.show();
     }

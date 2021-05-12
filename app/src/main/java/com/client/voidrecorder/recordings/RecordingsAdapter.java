@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -18,6 +19,7 @@ import com.client.voidrecorder.R;
 import com.client.voidrecorder.models.Recording;
 import com.client.voidrecorder.recorder.RecorderService;
 import com.client.voidrecorder.utils.Conversions;
+import com.client.voidrecorder.utils.ServiceUtil;
 
 import java.util.ArrayList;
 
@@ -38,25 +40,13 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         this.recordingsList = recordingsList;
     }
 
+    @NonNull
     @Override
-    public RecordingsAdapter.viewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+    public RecordingsAdapter.viewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
         View view = LayoutInflater.from(context).inflate(R.layout.recordings_list_item, viewGroup, false);
         return new viewHolder(view);
     }
 
-
-    public static boolean isServiceRunningInForeground(Context context, Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                if (service.foreground) {
-                    return true;
-                }
-
-            }
-        }
-        return false;
-    }
 
     @Override
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
@@ -73,15 +63,14 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         holder.size.setText(Conversions.humanReadableByteCountSI(recordingsList.get(i).getSize()));
 
         if(i == 0){
-            if(isServiceRunningInForeground(context, RecorderService.class)){
+            if(ServiceUtil.isServiceRunningInForeground(context, RecorderService.class)){
                 holder.itemView.setBackground(ContextCompat.getDrawable(context, R.drawable.recordings_recording_round_background));
-                holder.duration.setText("00:00");
-                holder.size.setText("0 Kb");
+                holder.duration.setText(context.getString(R.string.dummy_duration));
+                holder.size.setText(context.getString(R.string.dummy_size));
                 holder.shareBtn.setEnabled(false);
                 holder.saveBtn.setEnabled(false);
                 holder.deleteBtn.setEnabled(false);
                 holder.itemView.setClickable(false);
-
             }
         }
 
@@ -94,31 +83,9 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
         }
 
-        holder.saveBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                onItemClickListener.onSaveClick(holder.getAdapterPosition(), view);
-
-            }
-        });
-
-        holder.shareBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onItemClickListener.onShareClick(holder.getAdapterPosition(), view);
-
-            }
-        });
-
-
-        holder.deleteBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onItemClickListener.onDeleteClick(holder.getAdapterPosition(), view);
-
-            }
-        });
+        holder.saveBtn.setOnClickListener(view -> onItemClickListener.onSaveClick(holder.getAdapterPosition(), view));
+        holder.shareBtn.setOnClickListener(view -> onItemClickListener.onShareClick(holder.getAdapterPosition(), view));
+        holder.deleteBtn.setOnClickListener(view -> onItemClickListener.onDeleteClick(holder.getAdapterPosition(), view));
 
     }
 
@@ -126,7 +93,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
         String ext = str.substring(str.length() - 4);
 
-        if (str != null && str.length() > 0) {
+        if (str.length() > 0) {
             str = str.substring(0, str.length() -6);
         }
 
@@ -155,30 +122,20 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         public viewHolder(View itemView) {
             super(itemView);
             this.itemView = itemView;
-            title = (TextView) itemView.findViewById(R.id.title);
-            date = (TextView) itemView.findViewById(R.id.date);
-            duration = (TextView) itemView.findViewById(R.id.duration);
-            size = (TextView) itemView.findViewById(R.id.size);
+            title = itemView.findViewById(R.id.title);
+            date = itemView.findViewById(R.id.date);
+            duration = itemView.findViewById(R.id.duration);
+            size = itemView.findViewById(R.id.size);
 
             saveBtn = itemView.findViewById(R.id.saveBtn);
             shareBtn = itemView.findViewById(R.id.shareBtn);
             deleteBtn = itemView.findViewById(R.id.deleteBtn);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-//                    final int sdk = android.os.Build.VERSION.SDK_INT;
-//                    if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN) {
-//                        v.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background) );
-//                    } else {
-//                        v.setBackground(ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background));
-//                    }
-                    notifyItemChanged(selected_position);
-                    selected_position = getLayoutPosition();
-                    notifyItemChanged(selected_position);
-                    onItemClickListener.onItemClick(getAdapterPosition(), v);
-                }
+            itemView.setOnClickListener(v -> {
+                notifyItemChanged(selected_position);
+                selected_position = getLayoutPosition();
+                notifyItemChanged(selected_position);
+                onItemClickListener.onItemClick(getAdapterPosition(), v);
             });
         }
 
