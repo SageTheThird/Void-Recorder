@@ -29,8 +29,10 @@ import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class RecorderFragment extends Fragment {
 
@@ -79,6 +81,7 @@ public class RecorderFragment extends Fragment {
 
         if (checkPermissions()) {
 
+            Log.d(TAG, "onViewCreated: Permissions Granted");
             setAudioRecorder();
 
             if (isServiceRunningInForeground(mContext, RecorderService.class)) {
@@ -93,6 +96,38 @@ public class RecorderFragment extends Fragment {
 
         }
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        Log.d(TAG, "onRequestPermissionsResult: called");
+        boolean record = false,storage =  false;
+        switch (requestCode) {
+            case  PERMISSION_ALL: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < permissions.length; i++) {
+                        if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
+                            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                                record = true;
+                            } else {
+                                Toast.makeText(mContext, "Please allow Microphone permission", Toast.LENGTH_LONG).show();
+                            }
+                        } else if (permissions[i].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                                storage = true;
+                            } else {
+                                Toast.makeText(mContext, "Please allow Storage permission", Toast.LENGTH_LONG).show();
+                            }
+
+                        }
+                    }
+                }
+                if (record && storage) {
+                    setAudioRecorder();
+                }
+            }
+        }
     }
 
     private void registerCountDownReceiver() {
@@ -161,19 +196,11 @@ public class RecorderFragment extends Fragment {
 
 
     private boolean checkPermissions(){
-        if (ActivityCompat.checkSelfPermission(getContext(),
-                android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getContext(),
-                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-
-            //permissions granted
-            return true;
-
-        } else {
-            //permissions denied
-
-            return false;
-        }
+        //permissions granted
+        return ActivityCompat.checkSelfPermission(mContext,
+                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(mContext,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
 
 

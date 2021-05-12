@@ -4,11 +4,13 @@ import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import android.Manifest;
@@ -25,6 +27,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +39,10 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.Slide;
+import androidx.transition.Transition;
+import androidx.transition.TransitionManager;
+
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.db.DatabaseTransactions;
 import com.client.voidrecorder.models.Recording;
@@ -68,13 +75,15 @@ public class RecordingsFragment extends Fragment {
     RecyclerView recyclerView;
     MediaPlayer mediaPlayer;
     double current_pos, total_duration;
-    TextView current, total, toolbarTextView;
-    ImageView prevBtn, nextBtn, pauseBtn;
+    TextView current, total, toolbarTextView, titlePlayerTv;
+    ImageView prevBtn, nextBtn, pauseBtn, backBtn, closePlayerBtn;
+    RelativeLayout root;
     SeekBar seekBar;
     int audio_index = 0;
     public static final int PERMISSION_READ = 0;
     private RecordingsAdapter adapter;
     Context mContext;
+    private ConstraintLayout playerRoot;
 
     //db vars
     private DatabaseTransactions databaseTransactions;
@@ -153,6 +162,11 @@ public class RecordingsFragment extends Fragment {
         seekBar = parentView.findViewById(R.id.seekbar);
         toolbarTextView =  parentView.findViewById(R.id.toolbarTextView);
         recyclerView = parentView.findViewById(R.id.recycler_view);
+        backBtn = parentView.findViewById(R.id.backBtn);
+        playerRoot = parentView.findViewById(R.id.playerRoot);
+        titlePlayerTv = parentView.findViewById(R.id.titlePlayerTv);
+        root = parentView.findViewById(R.id.root);
+        closePlayerBtn = parentView.findViewById(R.id.closePlayerBtn);
     }
 
     public void setupRecordings() {
@@ -172,17 +186,21 @@ public class RecordingsFragment extends Fragment {
             prevBtn.setOnClickListener(prevClickListener);
             nextBtn.setOnClickListener(nextClickListener);
             pauseBtn.setOnClickListener(pauseClickListener);
+            backBtn.setOnClickListener(backClickListener);
+            closePlayerBtn.setOnClickListener(closePlayerClickListener);
 
         }
     }
 
     public void playRecording(int pos) {
         try {
+            Recording currentRecording = recordingsList.get(pos);
             mediaPlayer.reset();
-            mediaPlayer.setDataSource(mContext, recordingsList.get(pos).getUri());
+            mediaPlayer.setDataSource(mContext, currentRecording.getUri());
             mediaPlayer.prepare();
             mediaPlayer.start();
             pauseBtn.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+            titlePlayerTv.setText(currentRecording.getTitle().substring(0, currentRecording.getTitle().length() - 6));
             audio_index = pos;
         } catch (Exception e) {
             e.printStackTrace();
@@ -340,13 +358,16 @@ public class RecordingsFragment extends Fragment {
 
         adapter = new RecordingsAdapter(mContext, recordingsList);
         recyclerView.setAdapter(adapter);
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+//        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+//        itemTouchHelper.attachToRecyclerView(recyclerView);
 
         adapter.setOnItemClickListener(new RecordingsAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int pos, View v) {
+
+                showPlayer();
                 playRecording(pos);
+                //make player visible
             }
 
             @Override
@@ -364,14 +385,15 @@ public class RecordingsFragment extends Fragment {
 
 
                 final EditText renameEditText = view.findViewById(R.id.etComments);
-                renameEditText.setText(currentClip.getTitle());
+                String exclude = currentClip.getTitle().substring(currentClip.getTitle().length() - 6);
+                renameEditText.setText(currentClip.getTitle().substring(0, currentClip.getTitle().length() - 6));
 
                 alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
                     @RequiresApi(api = Build.VERSION_CODES.O)
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
 
-                        String newFileName = renameEditText.getText().toString();
+                        String newFileName = renameEditText.getText().toString() + exclude;
 
                         //here we rename the audio file and save the entry in db so that it doesn't get deleted automatically
                         Recording curr_recording = recordingsList.get(pos);
@@ -389,18 +411,24 @@ public class RecordingsFragment extends Fragment {
                         if (fileHandler.rename(from, to)) {
                             //Rename Success
                             Log.i(TAG, "Rename File : Success");
+                            //set Uri as well
+                            Log.d(TAG, "onClick: Uri After : "+Uri.fromFile(to));
+
+                            curr_recording.setTitle(newFileName);
+                            curr_recording.setUri(Uri.fromFile(to));
                             recordingsList.get(pos).setTitle(newFileName);
+                            recordingsList.get(pos).setUri(Uri.fromFile(to));
+
                             adapter.notifyDataSetChanged();
 
                             //here we save to db
                             if(!savedRecordingsSet.contains(curr_recording.getTitle())){
 
+                                Log.d(TAG, "onClick: Not in Saved : "+curr_recording.getTitle());
                                 savedRecordingsSet.add(curr_recording.getTitle());
                                 databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.getUri().toString());
                                 recordingsList.get(pos).setSaved(true);
                                 adapter.notifyDataSetChanged();
-
-
 
                             }
 
@@ -446,6 +474,13 @@ public class RecordingsFragment extends Fragment {
                 }
 
             }
+
+            @Override
+            public void onDeleteClick(int pos, View v) {
+                //delete item
+                Log.d(TAG, "onDeleteClick: Delete Title |: "+recordingsList.get(pos).getTitle());
+                showDeleteFileConfirmationDialog(pos);
+            }
         });
     }
 
@@ -486,6 +521,21 @@ public class RecordingsFragment extends Fragment {
     }
 
 
+
+    private void showPlayer(){
+        if(playerRoot.getVisibility() == View.GONE){
+            TransitionManager.beginDelayedTransition(root);
+            playerRoot.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hidePlayer(){
+        if(playerRoot.getVisibility() == View.VISIBLE){
+            TransitionManager.beginDelayedTransition(root);
+            playerRoot.setVisibility(View.GONE);
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -496,26 +546,23 @@ public class RecordingsFragment extends Fragment {
 
 
 
-    ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-
-        @Override
-        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-            Toast.makeText(mContext, "on Move", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        @Override
-        public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
-
-            Log.d(TAG, "onSwiped: Swiped Title |: "+recordingsList.get(viewHolder.getAdapterPosition()).getTitle());
-
-
-            showDeleteFileConfirmationDialog(viewHolder.getAdapterPosition());
-
-
-
-        }
-    };
+//    ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+//
+//        @Override
+//        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+//            Toast.makeText(mContext, "on Move", Toast.LENGTH_SHORT).show();
+//            return false;
+//        }
+//
+//        @Override
+//        public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
+//
+//
+//
+//
+//
+//        }
+//    };
 
     /*Deletes the file from internal storage and db(if present)*/
     private void delete(String title,  File fileToDelete){
@@ -537,8 +584,8 @@ public class RecordingsFragment extends Fragment {
 
         //Remove swiped item from list and notify the RecyclerView
         new AlertDialog.Builder(mContext)
-                .setTitle("Delete entry")
-                .setMessage("Are you sure you want to delete this entry?")
+                .setTitle("Delete Confirmation")
+                .setMessage("Are you sure you want to delete "+ recordingsList.get(position).getTitle().substring(0, recordingsList.get(position).getTitle().length() - 6) + " (" + Conversions.humanReadableByteCountSI(recordingsList.get(position).getSize()) + ")?")
 
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.
@@ -618,13 +665,17 @@ public class RecordingsFragment extends Fragment {
     MediaPlayer.OnCompletionListener trackCompletionListener = new MediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(MediaPlayer mp) {
-            audio_index++;
-            if (audio_index < (recordingsList.size())) {
-                playRecording(audio_index);
-            } else {
-                audio_index = 0;
-                playRecording(audio_index);
-            }
+            pauseBtn.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+
+//            audio_index++;
+//            adapter.setSelectedPosition(audio_index);
+//
+//            if (audio_index < (recordingsList.size())) {
+//                playRecording(audio_index);
+//            } else {
+//                audio_index = 0;
+//                playRecording(audio_index);
+//            }
 
         }
     };
@@ -682,6 +733,25 @@ public class RecordingsFragment extends Fragment {
                 audio_index = 0;
             }
             playRecording(audio_index);
+        }
+    };
+
+    View.OnClickListener backClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+           requireActivity().onBackPressed();
+        }
+    };
+
+    View.OnClickListener closePlayerClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if(mediaPlayer.isPlaying()){
+                mediaPlayer.stop();
+            }
+
+            hidePlayer();
+
         }
     };
 

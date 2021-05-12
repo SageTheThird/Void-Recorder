@@ -9,7 +9,7 @@
             android:key="@string/output_format_pref"
             android:summary="Select an output format for recordings : %s"
             android:title="Output format"
-            android:defaultValue="m4a"
+            android:defaultValue="mp3"
             />
 
         <ListPreference

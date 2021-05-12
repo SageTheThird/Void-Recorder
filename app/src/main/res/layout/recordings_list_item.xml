@@ -6,6 +6,8 @@
     android:layout_marginTop="20dp"
     android:layout_marginStart="10dp"
     android:layout_marginEnd="10dp"
+    android:background="@drawable/recordings_round_background"
+
     >
 
     <LinearLayout
@@ -14,13 +16,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:weightSum="100"
-        android:background="@drawable/recordings_round_background"
         >
 
         <include
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="75"
+            android:layout_weight="70"
             android:gravity="center_vertical"
             layout="@layout/snippet_meta_recording_list"
 
@@ -32,9 +33,9 @@
 
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="25"
+            android:layout_weight="30"
             xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:padding="10dp"
+            android:padding="7dp"
 
             >
 
@@ -51,7 +52,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/shareBtn"
-                android:layout_marginEnd="7dp"
+
                 />
 
             <ImageView
@@ -60,6 +61,21 @@
                 android:src="@drawable/ic_baseline_share_24"
                 android:id="@+id/shareBtn"
                 app:layout_constraintStart_toEndOf="@id/saveBtn"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+
+                app:layout_constraintEnd_toStartOf="@id/deleteBtn"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                />
+
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/ic_baseline_delete_24"
+                android:id="@+id/deleteBtn"
+                app:layout_constraintStart_toEndOf="@id/shareBtn"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

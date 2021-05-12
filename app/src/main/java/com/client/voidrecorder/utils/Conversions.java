@@ -166,7 +166,7 @@ public class Conversions {
     @SuppressLint("DefaultLocale")
     public static String getFormattedDurationFromSeconds(long milliSeconds){
 
-        milliSeconds = milliSeconds + 1000;
+//        milliSeconds = milliSeconds + 1000;
 
         return  String.format("%02d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(milliSeconds),

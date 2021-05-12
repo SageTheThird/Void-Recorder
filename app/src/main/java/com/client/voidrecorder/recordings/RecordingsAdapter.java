@@ -1,6 +1,7 @@
 package com.client.voidrecorder.recordings;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.client.voidrecorder.R;
@@ -22,6 +24,12 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
     Context context;
     ArrayList<Recording> recordingsList;
     public OnItemClickListener onItemClickListener;
+    int selected_position = RecyclerView.NO_POSITION; // You have to set this globally in the Adapter class
+
+
+    public void setSelectedPosition(int position){
+        selected_position = position;
+    }
 
     public RecordingsAdapter(Context context, ArrayList<Recording> recordingsList) {
         this.context = context;
@@ -36,6 +44,9 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
     @Override
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
+
+
+        holder.itemView.setBackground(selected_position == i ? ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background) : ContextCompat.getDrawable(context, R.drawable.recordings_round_background));
 
 
         holder.title.setText(titleWithoutExt(recordingsList.get(i).getTitle()));
@@ -55,6 +66,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         holder.saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 onItemClickListener.onSaveClick(holder.getAdapterPosition(), view);
 
             }
@@ -67,6 +79,16 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
             }
         });
+
+
+        holder.deleteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onItemClickListener.onDeleteClick(holder.getAdapterPosition(), view);
+
+            }
+        });
+
     }
 
     public String titleWithoutExt(String str) {
@@ -96,10 +118,12 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
     public class viewHolder extends RecyclerView.ViewHolder {
         TextView title, date, duration, size;
-        ImageView saveBtn, shareBtn;
+        ImageView saveBtn, shareBtn, deleteBtn;
+        View itemView;
 
         public viewHolder(View itemView) {
             super(itemView);
+            this.itemView = itemView;
             title = (TextView) itemView.findViewById(R.id.title);
             date = (TextView) itemView.findViewById(R.id.date);
             duration = (TextView) itemView.findViewById(R.id.duration);
@@ -107,14 +131,28 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
 
             saveBtn = itemView.findViewById(R.id.saveBtn);
             shareBtn = itemView.findViewById(R.id.shareBtn);
+            deleteBtn = itemView.findViewById(R.id.deleteBtn);
 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+//                    final int sdk = android.os.Build.VERSION.SDK_INT;
+//                    if(sdk < android.os.Build.VERSION_CODES.JELLY_BEAN) {
+//                        v.setBackgroundDrawable(ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background) );
+//                    } else {
+//                        v.setBackground(ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background));
+//                    }
+                    notifyItemChanged(selected_position);
+                    selected_position = getLayoutPosition();
+                    notifyItemChanged(selected_position);
                     onItemClickListener.onItemClick(getAdapterPosition(), v);
                 }
             });
         }
+
+
+
     }
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
         this.onItemClickListener = onItemClickListener;
@@ -123,5 +161,6 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         void onItemClick(int pos, View v);
         void onSaveClick(int pos, View v);
         void onShareClick(int pos, View v);
+        void onDeleteClick(int pos, View v);
     }
 }
