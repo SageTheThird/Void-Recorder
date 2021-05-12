@@ -77,6 +77,10 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
                 holder.itemView.setBackground(ContextCompat.getDrawable(context, R.drawable.recordings_recording_round_background));
                 holder.duration.setText("00:00");
                 holder.size.setText("0 Kb");
+                holder.shareBtn.setEnabled(false);
+                holder.saveBtn.setEnabled(false);
+                holder.deleteBtn.setEnabled(false);
+                holder.itemView.setClickable(false);
 
             }
         }
