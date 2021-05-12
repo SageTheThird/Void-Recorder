@@ -1,5 +1,6 @@
 package com.client.voidrecorder.recordings;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.client.voidrecorder.R;
 
 import com.client.voidrecorder.models.Recording;
+import com.client.voidrecorder.recorder.RecorderService;
 import com.client.voidrecorder.utils.Conversions;
 
 import java.util.ArrayList;
@@ -42,8 +44,24 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         return new viewHolder(view);
     }
 
+
+    public static boolean isServiceRunningInForeground(Context context, Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                if (service.foreground) {
+                    return true;
+                }
+
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
+
+
 
 
         holder.itemView.setBackground(selected_position == i ? ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background) : ContextCompat.getDrawable(context, R.drawable.recordings_round_background));
@@ -53,6 +71,15 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         holder.date.setText(recordingsList.get(i).getDate());
         holder.duration.setText(recordingsList.get(i).getDuration());
         holder.size.setText(Conversions.humanReadableByteCountSI(recordingsList.get(i).getSize()));
+
+        if(i == 0){
+            if(isServiceRunningInForeground(context, RecorderService.class)){
+                holder.itemView.setBackground(ContextCompat.getDrawable(context, R.drawable.recordings_recording_round_background));
+                holder.duration.setText("00:00");
+                holder.size.setText("0 Kb");
+
+            }
+        }
 
         if(recordingsList.get(i).isSaved()){
             //show tick mark

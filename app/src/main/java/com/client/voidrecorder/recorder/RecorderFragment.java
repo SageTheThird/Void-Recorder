@@ -167,14 +167,14 @@ public class RecorderFragment extends Fragment {
     /* */
     private void showRecordingUI() {
         startBtn.setEnabled(false);
-        recordingsBtn.setEnabled(false);
+        recordingsBtn.setEnabled(true);
         startBtn.setVisibility(View.INVISIBLE);
         recordTV.setVisibility(View.INVISIBLE);
         stopBtn.setEnabled(true);
         stopBtn.setBackgroundResource(R.drawable.round_shape);
         stopBtn.setImageResource(R.drawable.ic_stop_black_35dp);
-        recordingsBtn.setBackgroundResource(R.drawable.normal_background);
-        recordingsBtn.setImageResource(R.drawable.normal_menu);
+//        recordingsBtn.setBackgroundResource(R.drawable.normal_background);
+//        recordingsBtn.setImageResource(R.drawable.normal_menu);
     }
 
     //runtime permissions check
@@ -284,6 +284,10 @@ public class RecorderFragment extends Fragment {
             recordingsBtn.setBackgroundResource(R.drawable.round_shape);
             recordingsBtn.setImageResource(R.drawable.ic_menu_black_35dp);
             timerTextView.setText("00:00:00");
+
+            if(serviceStatusTv.getVisibility() == View.VISIBLE){
+                serviceStatusTv.setVisibility(View.INVISIBLE);
+            }
         }
     };
 

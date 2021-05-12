@@ -3,13 +3,12 @@ package com.client.voidrecorder.recordings;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -19,7 +18,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -36,26 +34,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.transition.Slide;
-import androidx.transition.Transition;
 import androidx.transition.TransitionManager;
-
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.db.DatabaseTransactions;
 import com.client.voidrecorder.models.Recording;
-import com.client.voidrecorder.recorder.RecorderService;
 import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.FileHandler;
 import com.client.voidrecorder.utils.Paths;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -64,10 +52,17 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import abhishekti7.unicorn.filepicker.UnicornFilePicker;
+import abhishekti7.unicorn.filepicker.utils.Constants;
+
+import static android.app.Activity.RESULT_OK;
+
+
 public class RecordingsFragment extends Fragment {
 
-    private static final String TAG = "RecordingsActivity";
+    private static final String TAG = "RecordingsFragment";
     public static int MAX_ALLOWED_STORAGE = 30 * 1000000;//30MB - default
+    public static int PICK_FILES_REQUEST = 101;//30MB - default
     public static String OUTPUT_QUALITY = "m4a";//30MB - default
 
 
@@ -75,7 +70,7 @@ public class RecordingsFragment extends Fragment {
     RecyclerView recyclerView;
     MediaPlayer mediaPlayer;
     double current_pos, total_duration;
-    TextView current, total, toolbarTextView, titlePlayerTv;
+    TextView current, total, folderInfoTv, titlePlayerTv;
     ImageView prevBtn, nextBtn, pauseBtn, backBtn, closePlayerBtn;
     RelativeLayout root;
     SeekBar seekBar;
@@ -160,7 +155,7 @@ public class RecordingsFragment extends Fragment {
         nextBtn = parentView.findViewById(R.id.next);
         pauseBtn = parentView.findViewById(R.id.pause);
         seekBar = parentView.findViewById(R.id.seekbar);
-        toolbarTextView =  parentView.findViewById(R.id.toolbarTextView);
+        folderInfoTv =  parentView.findViewById(R.id.folderToolTV);
         recyclerView = parentView.findViewById(R.id.recycler_view);
         backBtn = parentView.findViewById(R.id.backBtn);
         playerRoot = parentView.findViewById(R.id.playerRoot);
@@ -188,6 +183,7 @@ public class RecordingsFragment extends Fragment {
             pauseBtn.setOnClickListener(pauseClickListener);
             backBtn.setOnClickListener(backClickListener);
             closePlayerBtn.setOnClickListener(closePlayerClickListener);
+            folderInfoTv.setOnClickListener(folderInfoClickListener);
 
         }
     }
@@ -198,8 +194,8 @@ public class RecordingsFragment extends Fragment {
             mediaPlayer.reset();
             mediaPlayer.setDataSource(mContext, currentRecording.getUri());
             mediaPlayer.prepare();
-            mediaPlayer.start();
-            pauseBtn.setImageResource(R.drawable.ic_pause_circle_filled_black_24dp);
+//            mediaPlayer.start();
+            pauseBtn.setImageResource(R.drawable.ic_play_arrow_black_24dp);
             titlePlayerTv.setText(currentRecording.getTitle().substring(0, currentRecording.getTitle().length() - 6));
             audio_index = pos;
         } catch (Exception e) {
@@ -275,7 +271,7 @@ public class RecordingsFragment extends Fragment {
     /*Updates text on toolbar textView which shows size and no of recordings*/
     private void updateSizeTextView(long folderSize, int noOfRecordings){
         String sizeTemp = Conversions.humanReadableByteCountSI(folderSize) + "/" + Conversions.humanReadableByteCountSI(MAX_ALLOWED_STORAGE) + " (" + noOfRecordings + ")";
-        toolbarTextView.setText(sizeTemp);
+        folderInfoTv.setText(sizeTemp);
     }
 
     /*Checks if the total space occupied by recordings has exceeded the max space allowed and deletes oldest files on confirm*/
@@ -349,6 +345,41 @@ public class RecordingsFragment extends Fragment {
         if(savedRecordingsSet== null) return false;
         return savedRecordingsSet.size() > 0 && savedRecordingsSet.contains(title);
     }
+
+
+
+    public void openFolder(){
+//        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+//        Uri uri = Uri.parse(Paths.getOutputFolder());
+//        intent.setDataAndType(uri, "resource/folder");
+//        startActivity(Intent.createChooser(intent, "Open folder"));
+
+//        UnicornFilePicker.from(requireActivity())
+//                .addConfigBuilder()
+//                .selectMultipleFiles(true)
+//                .showOnlyDirectory(false)
+//                .setRootDirectory(Paths.getOutputFolder())
+//                .showHiddenFiles(false)
+//                .setFilters(new String[]{"mp3", "m4a", "3gp"})
+//                .addItemDivider(true)
+//                .theme(R.style.UnicornFilePicker_Dracula)
+//                .build()
+//                .forResult(PICK_FILES_REQUEST);
+    }
+
+
+//    @Override
+//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        Log.d(TAG, "onActivityResult: ");
+//        if (requestCode == PICK_FILES_REQUEST && resultCode == RESULT_OK) {
+//            assert data != null;
+//            ArrayList<String> files = data.getStringArrayListExtra("filePaths");
+//            for(String file : files){
+//                Log.d(TAG, "onActivityResult: "+file);
+//            }
+//        }
+//    }
 
     private void setupRecyclerView() {
 
@@ -751,6 +782,14 @@ public class RecordingsFragment extends Fragment {
             }
 
             hidePlayer();
+
+        }
+    };
+
+    View.OnClickListener folderInfoClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            openFolder();
 
         }
     };

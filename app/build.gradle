@@ -13,9 +13,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+
     defaultConfig {
         applicationId "com.client.voidrecorder"
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -63,5 +64,10 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-core'
+
+    //file picker library - advanced and light-weight
+    implementation 'com.github.abhishekti7:UnicornFilePicker:1.0.2'
+
+
 
 }
