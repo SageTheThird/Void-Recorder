@@ -11,29 +11,23 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.client.voidrecorder.models.RecordingDB;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /*
-* Responsible for interactions of UI with Database. Contains Insert, Delete, & GetAll methods.
-* */
+ * Responsible for interactions of UI with Database. Contains Insert, Delete, & GetAll methods.
+ * */
 
 public class DatabaseTransactions {
     private static final String TAG = "DatabaseTransactions";
 
     public static final String DATABASE_NAME = "RecordingsDB";
-
-
     private RecordingsAppDatabase recordingsAppDatabase;
     private RecordingsDAO recordingsDAO;
 
-    HashSet<String> savedRecordingsSet;
-
-
-    public DatabaseTransactions(Context context){
+    public DatabaseTransactions(Context context) {
 
         recordingsAppDatabase = Room.databaseBuilder(context, RecordingsAppDatabase.class, DATABASE_NAME).addCallback(startupCallBack).build();
         recordingsDAO = recordingsAppDatabase.getRecordingsDAO();
@@ -41,21 +35,20 @@ public class DatabaseTransactions {
 
     }
 
-    public void closeDB(){
-        if(recordingsAppDatabase != null){
+    public void closeDB() {
+        if (recordingsAppDatabase != null) {
             recordingsAppDatabase.close();
         }
 
     }
 
 
-
-    public void deleteRecordingFromDB(String title){
+    public void deleteRecordingFromDB(String title) {
         new DeleteRecordingFromDBAsyncTask(recordingsDAO).execute(title);
     }
 
-    public void saveRecordingToDb(String title, String uri){
-        new SaveRecordingToDBAsyncTask(recordingsDAO).execute(new RecordingDB(0,title,uri));
+    public void saveRecordingToDb(String title, String uri) {
+        new SaveRecordingToDBAsyncTask(recordingsDAO).execute(new RecordingDB(0, title, uri));
 
     }
 
@@ -66,29 +59,24 @@ public class DatabaseTransactions {
     }
 
     /*Adds saved recording to db, to prevent it from deleting automatically*/
-    private class SaveRecordingToDBAsyncTask extends AsyncTask<RecordingDB,Void,Void> {
+    private static class SaveRecordingToDBAsyncTask extends AsyncTask<RecordingDB, Void, Long> {
 
-        RecordingsDAO recordingsDAO;
+        WeakReference<RecordingsDAO> recordingsDAO;
 
-        public SaveRecordingToDBAsyncTask(RecordingsDAO recordingsDAO){
+        public SaveRecordingToDBAsyncTask(RecordingsDAO recordingsDAO) {
 
-            this.recordingsDAO = recordingsDAO;
+            this.recordingsDAO = new WeakReference<>(recordingsDAO);
 
         }
 
         @Override
-        protected Void doInBackground(RecordingDB... recording) {
-
-            long id = recordingsDAO.addRecordingToDB(recording[0]);
-
-            Log.d(TAG, "doInBackground: Recording Added To DB : "+id);
-
-            return null;
+        protected Long doInBackground(RecordingDB... recording) {
+            return recordingsDAO.get().addRecordingToDB(recording[0]);
         }
 
 
         @Override
-        protected void onPostExecute(Void aVoid) {
+        protected void onPostExecute(Long aVoid) {
             super.onPostExecute(aVoid);
 
 //            contactsAdapter.notifyDataSetChanged();
@@ -96,14 +84,14 @@ public class DatabaseTransactions {
     }
 
     /*Deletes saved recording From db*/
-    private class DeleteRecordingFromDBAsyncTask extends AsyncTask<String,Void,Void> {
+    private static class DeleteRecordingFromDBAsyncTask extends AsyncTask<String, Void, Void> {
 
 
-        RecordingsDAO recordingsDAO;
+        WeakReference<RecordingsDAO> recordingsDAO;
 
-        public DeleteRecordingFromDBAsyncTask(RecordingsDAO recordingsDAO){
+        public DeleteRecordingFromDBAsyncTask(RecordingsDAO recordingsDAO) {
 
-            this.recordingsDAO = recordingsDAO;
+            this.recordingsDAO = new WeakReference<>(recordingsDAO);
 
         }
 
@@ -111,8 +99,7 @@ public class DatabaseTransactions {
         @Override
         protected Void doInBackground(String... recordingDBS) {
 
-            recordingsDAO.deleteRecordingDbWithTitle(recordingDBS[0]);
-            Log.d(TAG, "doInBackground: Entry Deleted From Database With Title : "+recordingDBS[0]);
+            recordingsDAO.get().deleteRecordingDbWithTitle(recordingDBS[0]);
 
             return null;
         }
@@ -126,23 +113,26 @@ public class DatabaseTransactions {
         }
     }
 
-    private class GetAllRecordingsDBAsyncTask extends AsyncTask<Void,Void,HashSet<String>>{
 
-        RecordingsDAO recordingsDAO;
+    /*Gets All Saved Recordings From DB and saves them in a hashmap and return hashmap*/
+    private static class GetAllRecordingsDBAsyncTask extends AsyncTask<Void, Void, HashSet<String>> {
 
-        public GetAllRecordingsDBAsyncTask(RecordingsDAO recordingsDAO){
+        WeakReference<RecordingsDAO> recordingsDAO;
 
-            this.recordingsDAO = recordingsDAO;
+        public GetAllRecordingsDBAsyncTask(RecordingsDAO recordingsDAO) {
+
+            this.recordingsDAO = new WeakReference<>(recordingsDAO);
 
         }
+
         @Override
         protected HashSet<String> doInBackground(Void... voids) {
 
             //map containing title as key and whole object as value, so later we can get constant lookup
             HashSet<String> savedSet = new HashSet<>();
-            List<RecordingDB> recList = recordingsDAO.getAllSavedRecordings();
+            List<RecordingDB> recList = recordingsDAO.get().getAllSavedRecordings();
 
-            for(int i=0; i<recList.size(); i++){
+            for (int i = 0; i < recList.size(); i++) {
 
                 savedSet.add(recList.get(i).getTitle());
 
@@ -158,29 +148,16 @@ public class DatabaseTransactions {
         }
     }
 
-    RoomDatabase.Callback startupCallBack= new RoomDatabase.Callback() {
+    RoomDatabase.Callback startupCallBack = new RoomDatabase.Callback() {
         @Override
         public void onCreate(@NonNull SupportSQLiteDatabase db) {
             super.onCreate(db);
-
-            //Toast.makeText(getApplicationContext()," On Create Called ",Toast.LENGTH_LONG).show();
-            Log.i(TAG, " on create invoked ");
-
-//            saveRecordingToDb("Clip 1", "Uri 1");
-//            saveRecordingToDb("Clip 2","Uri 2");
-//            saveRecordingToDb("Clip 3","Uri 3");
-
-
         }
 
 
         @Override
         public void onOpen(@NonNull SupportSQLiteDatabase db) {
             super.onOpen(db);
-
-            //  Toast.makeText(getApplicationContext()," On Create Called ",Toast.LENGTH_LONG).show();
-            Log.i(TAG, " on open invoked ");
-
         }
 
     };

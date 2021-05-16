@@ -6,6 +6,9 @@ import androidx.preference.PreferenceFragmentCompat;
 
 import com.client.voidrecorder.R;
 
+/*
+* Settings can be edited from R.xml.settings file
+* */
 public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -14,7 +17,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         //output setting
         //sample rate setting
         //automatic deletion after max_space_allowed exceeds
-        //
+        //Space limit
+        //Max Duration
+        //Space limit exceeded dialog
 
 
     }

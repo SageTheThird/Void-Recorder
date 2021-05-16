@@ -2,7 +2,6 @@ package com.client.voidrecorder.recorder;
 
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
-import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -10,11 +9,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import android.Manifest;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -22,22 +19,24 @@ import android.os.Build;
 import com.client.voidrecorder.R;
 import com.client.voidrecorder.utils.Conversions;
 import com.client.voidrecorder.utils.ServiceUtil;
-import com.client.voidrecorder.utils.SharedPreferencesHelper;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.ArrayList;
-import java.util.Objects;
 
+
+
+/*
+* Host Fragment for Recording Service
+* */
 public class RecorderFragment extends Fragment {
 
-    private static final String TAG = "RecorderActivity";
+    private static final String TAG = "RecorderFragment";
 
     private TextView timerTextView,serviceStatusTv,recordTV;
     private ImageView startBtn, stopBtn, recordingsBtn, settingsBtn,infoBtn;
@@ -82,7 +81,6 @@ public class RecorderFragment extends Fragment {
 
         if (checkPermissions()) {
 
-            Log.d(TAG, "onViewCreated: Permissions Granted");
             setAudioRecorder();
 
             if (ServiceUtil.isServiceRunningInForeground(mContext, RecorderService.class)) {
@@ -102,7 +100,6 @@ public class RecorderFragment extends Fragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Log.d(TAG, "onRequestPermissionsResult: called");
         boolean record = false,storage =  false;
         if (requestCode == PERMISSION_ALL) {
             if (grantResults.length > 0) {
@@ -129,13 +126,12 @@ public class RecorderFragment extends Fragment {
         }
     }
 
+    /*Attaches Timer Broadcast Receiver in RecorderService.class to this fragment*/
     private void registerCountDownReceiver() {
         countdownTimerReceiver = new CountdownTimerReceiver();
         requireActivity().registerReceiver(countdownTimerReceiver, new IntentFilter("CountDownIntent"));
     }
 
-
-    /* */
     private void bindViews(View parentView) {
         timerTextView =  parentView.findViewById(R.id.text);
         startBtn = parentView.findViewById(R.id.start);
@@ -148,7 +144,6 @@ public class RecorderFragment extends Fragment {
         serviceStatusTv.setVisibility(View.INVISIBLE);
     }
 
-    /* */
     public void setAudioRecorder() {
         stopBtn.setEnabled(false);
         stopBtn.setBackgroundResource(R.drawable.normal_background);
@@ -163,7 +158,7 @@ public class RecorderFragment extends Fragment {
     }
 
 
-    /* */
+    /* When the recording is in progress*/
     private void showRecordingUI() {
         startBtn.setEnabled(false);
         recordingsBtn.setEnabled(true);
@@ -172,15 +167,29 @@ public class RecorderFragment extends Fragment {
         stopBtn.setEnabled(true);
         stopBtn.setBackgroundResource(R.drawable.round_shape);
         stopBtn.setImageResource(R.drawable.ic_stop_black_35dp);
-//        recordingsBtn.setBackgroundResource(R.drawable.normal_background);
-//        recordingsBtn.setImageResource(R.drawable.normal_menu);
+    }
+
+    private void showRecordingStopUI(){
+        startBtn.setEnabled(true);
+        recordingsBtn.setEnabled(true);
+        startBtn.setVisibility(View.VISIBLE);
+        recordTV.setVisibility(View.VISIBLE);
+        stopBtn.setEnabled(false);
+        stopBtn.setBackgroundResource(R.drawable.normal_background);
+        stopBtn.setImageResource(R.drawable.noraml_stop);
+        recordingsBtn.setBackgroundResource(R.drawable.round_shape);
+        recordingsBtn.setImageResource(R.drawable.ic_menu_black_35dp);
+        timerTextView.setText(mContext.getString(R.string.dummy_timer));
+
+        if(serviceStatusTv.getVisibility() == View.VISIBLE){
+            serviceStatusTv.setVisibility(View.INVISIBLE);
+        }
     }
 
     //runtime permissions check
     public void requestPermissions() {
         int RECORD_AUDIO_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO);
         int WRITE_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        int READ_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE);
         ArrayList<String> PERMISSION_LIST = new ArrayList<>();
         if ((RECORD_AUDIO_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             PERMISSION_LIST.add(Manifest.permission.RECORD_AUDIO);
@@ -209,21 +218,7 @@ public class RecorderFragment extends Fragment {
         if(countdownTimerReceiver != null){
             requireActivity().unregisterReceiver(countdownTimerReceiver);
         }
-        Log.d(TAG, "onDestroyView: Receiver UnRegistered ...");
     }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy: Called");
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        Log.d(TAG, "onStop: Called");
-    }
-
 
 
 
@@ -249,68 +244,30 @@ public class RecorderFragment extends Fragment {
         @Override
         public void onClick(View v) {
 
-            //clear timeResume pref
-            if(SharedPreferencesHelper.get(mContext, getString(R.string.timer_resume), "") != null){
-                SharedPreferencesHelper.remove(mContext, getString(R.string.timer_resume));
-            }
-
-
             mContext.stopService(serviceIntent);
+            showRecordingStopUI();
 
-
-            //cancel count down timer
-            startBtn.setEnabled(true);
-            recordingsBtn.setEnabled(true);
-            startBtn.setVisibility(View.VISIBLE);
-            recordTV.setVisibility(View.VISIBLE);
-            stopBtn.setEnabled(false);
-            stopBtn.setBackgroundResource(R.drawable.normal_background);
-            stopBtn.setImageResource(R.drawable.noraml_stop);
-            recordingsBtn.setBackgroundResource(R.drawable.round_shape);
-            recordingsBtn.setImageResource(R.drawable.ic_menu_black_35dp);
-            timerTextView.setText(mContext.getString(R.string.dummy_timer));
-
-            if(serviceStatusTv.getVisibility() == View.VISIBLE){
-                serviceStatusTv.setVisibility(View.INVISIBLE);
-            }
         }
     };
 
-    View.OnClickListener recordingsBtnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-            startBtn.setEnabled(true);
-            recordingsBtn.setEnabled(true);
-            stopBtn.setEnabled(false);
-            stopBtn.setBackgroundResource(R.drawable.normal_background);
-            stopBtn.setImageResource(R.drawable.noraml_stop);
-            recordingsBtn.setBackgroundResource(R.drawable.round_shape);
-            recordingsBtn.setImageResource(R.drawable.ic_menu_black_35dp);
-            NavHostFragment.findNavController(RecorderFragment.this)
-                        .navigate(R.id.action_RecorderFragment_to_RecordingsFragment);
-//            startActivity(new Intent(mContext, RecordingsActivity.class));
-        }
-    };
+    View.OnClickListener recordingsBtnClickListener = v -> NavHostFragment.findNavController(RecorderFragment.this)
+                .navigate(R.id.action_RecorderFragment_to_RecordingsFragment);
 
     View.OnClickListener settingsBtnClickListener = v -> NavHostFragment.findNavController(RecorderFragment.this)
             .navigate(R.id.action_RecorderFragment_to_SettingsFragment);
 
     View.OnClickListener infoBtnClickListener = v -> showSelectedOptionsDialog();
 
+    /*Displays selected settings on info btn click*/
     private void showSelectedOptionsDialog()  {
 
         final View view = LayoutInflater.from(mContext).inflate(R.layout.selected_settings_dialog_layout, null);
-
         AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
         alertDialog.setTitle("Selected Settings");
         alertDialog.setCancelable(false);
-
-
-        final TextView renameEditText = view.findViewById(R.id.etComments);
+        final TextView infoTv = view.findViewById(R.id.etComments);
         String settingsSelected = "Format : "+sharedPreferences.getString(getString(R.string.output_format_pref), "") + "\nQuality : "+sharedPreferences.getString(getString(R.string.output_quality_pref), "") + "\nDuration : "+sharedPreferences.getString(getString(R.string.max_duration), "") + " Minutes\nSpace Limit : "+sharedPreferences.getString(getString(R.string.max_space_pref), "")+ " MB" ;
-
-        renameEditText.setText(settingsSelected);
+        infoTv.setText(settingsSelected);
         alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Close", (dialogInterface, i) -> dialogInterface.dismiss());
         alertDialog.setView(view);
         alertDialog.show();
@@ -327,7 +284,6 @@ public class RecorderFragment extends Fragment {
             if(intent.getExtras() != null){
                 long millisUntilFinished = intent.getLongExtra("timer",30000);
                 timerTextView.setText(Conversions.getFormattedCountDownFromMillis(millisUntilFinished));
-                Log.d(TAG, "getCountDownFromService: "+millisUntilFinished);
             }
         }
 

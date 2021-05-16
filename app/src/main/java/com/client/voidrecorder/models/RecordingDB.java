@@ -2,11 +2,14 @@ package com.client.voidrecorder.models;
 
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
+
+/*Database model for recordings*/
 @Entity(tableName = "recordings")
 public class RecordingDB {
 
@@ -59,6 +62,7 @@ public class RecordingDB {
         this.id = id;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "RecordingDB{" +

@@ -2,17 +2,19 @@ package com.client.voidrecorder.utils;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
-
 import java.text.CharacterIterator;
-import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+
+
 
 public class Conversions {
     private static final String TAG = "Conversions";
 
 
+    /*Converts size in bytes into human readable format*/
+    @SuppressLint("DefaultLocale")
     public static String humanReadableByteCountSI(long bytes) {
         if (-1000 < bytes  && bytes < 1000) {
             return bytes + " B";
@@ -27,6 +29,7 @@ public class Conversions {
 
 
     //converts time to human readable form
+    @SuppressLint("DefaultLocale")
     public static String timeConversion(long value) {
         String audioTime;
         int dur = (int) value;
@@ -42,64 +45,6 @@ public class Conversions {
         return audioTime;
     }
 
-
-    public static String getTimeDifference(String startTime, String endTime){
-
-        String diff= "";
-
-        try {
-
-            SimpleDateFormat format = new SimpleDateFormat("kk:mm:ss aa");
-
-            Date startTimeOb = format.parse(startTime);
-            Date endTimeOb = format.parse(endTime);
-
-
-            long difference = endTimeOb.getTime() - startTimeOb.getTime();
-
-            Log.v("Data1", ""+startTimeOb.getTime());
-            Log.v("Data2", ""+endTimeOb.getTime());
-
-            long seconds = (int) (difference / 1000) % 60;
-            int hours = (int) (difference/(1000 * 60 * 60));
-            int mins = (int) (difference/(1000*60)) % 60;
-
-
-
-//            long diffInSec = TimeUnit.MILLISECONDS.toSeconds(mills);
-
-
-            diff = hours + ":" + mins + ":" +seconds; // updated value every1 second
-            Log.d(TAG, "onViewCreated: Time Difference : "+diff);
-
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-        return diff;
-    }
-
-
-    public static String getTimeNow(){
-
-
-        String timeNow = null;
-
-        try {
-
-            SimpleDateFormat format = new SimpleDateFormat("kk:mm:ss aa");
-            timeNow = format.format(new Date());
-
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-        return timeNow;
-
-
-    }
 
     @SuppressLint("DefaultLocale")
     public static String getFormattedCountDownFromMillis(long milliSeconds){
@@ -118,6 +63,7 @@ public class Conversions {
     }
 
 
+    /*Converts string into quality indicator*/
     public static String getQualityFromTitle(String fileName) {
 
         String withoutExt = fileName.substring(fileName.length()-6);
@@ -135,7 +81,7 @@ public class Conversions {
 
     }
 
-
+    /*Converts size into milliseconds - for determining duration of recording*/
     public static long getSecondsFromSize(long sizeInBytes, String quality, String extension){
         //High m4a - 32,207
         //Medium m4a - 16289
@@ -146,23 +92,20 @@ public class Conversions {
         if(extension.equals("m4a") || extension.equals("mp3")){
             switch (quality){
                 case "Hi":
-                    Log.d(TAG, "getSecondsFromSize: m4a High");
                     return sizeInBytes / 32207;
                 case "Me":
-                    Log.d(TAG, "getSecondsFromSize: m4a Medium");
                     return sizeInBytes / 16289;
                 case "Lo":
-                    Log.d(TAG, "getSecondsFromSize: m4a Low");
                     return sizeInBytes / 8244;
                 default:
                     return sizeInBytes;
             }
         }else {
-            Log.d(TAG, "getSecondsFromSize: 3gp ext");
             return sizeInBytes / 1865;
         }
     }
 
+    /*Converts milliseconds into formatted duration for recording*/
     @SuppressLint("DefaultLocale")
     public static String getFormattedDurationFromSeconds(long milliSeconds){
 

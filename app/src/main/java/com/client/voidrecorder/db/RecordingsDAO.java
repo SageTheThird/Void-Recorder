@@ -10,25 +10,27 @@ import com.client.voidrecorder.models.RecordingDB;
 
 import java.util.List;
 
+/*Interface for database transactions*/
+
 @Dao
 public interface RecordingsDAO {
 
     @Insert
-    public  long addRecordingToDB(RecordingDB recordingDB);
+    long addRecordingToDB(RecordingDB recordingDB);
 
     @Update
-    public void updateRecordingDB(RecordingDB recordingDB);
+    void updateRecordingDB(RecordingDB recordingDB);
 
     @Delete
-    public void deleteRecordingDB (RecordingDB recordingDB);
+    void deleteRecordingDB (RecordingDB recordingDB);
 
     @Query("DELETE from recordings where title==:recTitle")
-    public void deleteRecordingDbWithTitle(String recTitle);
+    void deleteRecordingDbWithTitle(String recTitle);
 
     @Query("select * from recordings")
-    public List<RecordingDB> getAllSavedRecordings();
+    List<RecordingDB> getAllSavedRecordings();
 
     @Query("select * from recordings where title ==:title")
-    public RecordingDB getRecording(String title);
+    RecordingDB getRecording(String title);
 
 }

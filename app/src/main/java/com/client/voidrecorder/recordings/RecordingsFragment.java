@@ -6,9 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -28,7 +26,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
+
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -52,17 +50,15 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import abhishekti7.unicorn.filepicker.UnicornFilePicker;
-import abhishekti7.unicorn.filepicker.utils.Constants;
-
-import static android.app.Activity.RESULT_OK;
-
-
+/*
+* Displays recorded clips
+* Hosts a player for recordings
+* Provide extra features : save, delete, share, for recordings
+* */
 public class RecordingsFragment extends Fragment {
 
     private static final String TAG = "RecordingsFragment";
     public static int MAX_ALLOWED_STORAGE = 30 * 1000000;//30MB - default
-    public static int PICK_FILES_REQUEST = 101;//30MB - default
     public static String OUTPUT_QUALITY = "m4a";//30MB - default
 
 
@@ -108,13 +104,15 @@ public class RecordingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         mContext = getActivity();
-        fileHandler = new FileHandler();
+        fileHandler = new FileHandler(mContext);
+
+        //fetch settings
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
         MAX_ALLOWED_STORAGE = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(mContext.getString(R.string.max_space_pref), ""))) * 1000000;
         OUTPUT_QUALITY = Objects.requireNonNull(sharedPreferences.getString(mContext.getString(R.string.output_quality_pref), ""));
 
 
-        if (checkPermission()) {
+        if (checkPermissions()) {
 
             databaseTransactions = new DatabaseTransactions(mContext);
             getSavedRecordingsFromDB();
@@ -123,11 +121,6 @@ public class RecordingsFragment extends Fragment {
 
             setupRecordings();
         }
-
-
-
-
-
 
     }
 
@@ -140,9 +133,7 @@ public class RecordingsFragment extends Fragment {
             for (String title : savedRecordingsSet) {
                 System.out.println("Saved Recordings Title : "+title);
             }
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -189,6 +180,9 @@ public class RecordingsFragment extends Fragment {
     }
 
     public void playRecording(int pos) {
+
+        highlightSelectedRecording(pos);
+
         try {
             Recording currentRecording = recordingsList.get(pos);
             mediaPlayer.reset();
@@ -201,9 +195,15 @@ public class RecordingsFragment extends Fragment {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         setAudioProgress();
     }
 
+    private void highlightSelectedRecording(int pos) {
+        adapter.notifyItemChanged(adapter.selected_position);
+        adapter.selected_position = pos;
+        adapter.notifyItemChanged(adapter.selected_position);
+    }
 
     /*Updates current, total textviews and seekbar*/
     public void setAudioProgress() {
@@ -231,15 +231,12 @@ public class RecordingsFragment extends Fragment {
         handler.postDelayed(runnable, 1000);
     }
 
-
-
-
     /*Fetch Recorded clips from the output directory*/
     private void getRecordedClips(){
 
         File[] files = fileHandler.getFilesFromOutputFolder();
 
-        SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("MMMM dd, yyyy");
 
 
         assert files != null;
@@ -266,8 +263,6 @@ public class RecordingsFragment extends Fragment {
 
     }
 
-
-
     /*Updates text on toolbar textView which shows size and no of recordings*/
     private void updateSizeTextView(long folderSize, int noOfRecordings){
         String sizeTemp = Conversions.humanReadableByteCountSI(folderSize) + "/" + Conversions.humanReadableByteCountSI(MAX_ALLOWED_STORAGE) + " (" + noOfRecordings + ")";
@@ -291,6 +286,7 @@ public class RecordingsFragment extends Fragment {
         }
     }
 
+    //deletes non-saved oldest files from storage, and local list
     private void deleteOldestFiles(){
 
         int noOfItemRemoved = 0;
@@ -307,7 +303,6 @@ public class RecordingsFragment extends Fragment {
                     totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - recordingsList.get(i).getSize();
 
                     //delete statement goes here
-                    Log.d(TAG, "getRecordedClips: " +recordingsList.get(i).getTitle() +  " Deleted Due to MAx_LIMIT SUCCEED " + i + " : Size Now : "+Conversions.humanReadableByteCountSI(totalSizeOfFolderInBytes));
                     delete(recordingsList.get(i).getTitle(), new File(Objects.requireNonNull(recordingsList.get(i).getUri().getPath())));
                     recordingsList.remove(i);
 
@@ -341,45 +336,12 @@ public class RecordingsFragment extends Fragment {
         }
     }
 
+    //checks if recording is saved
     private boolean isRecordingSaved(String title) {
         if(savedRecordingsSet== null) return false;
         return savedRecordingsSet.size() > 0 && savedRecordingsSet.contains(title);
     }
 
-
-
-    public void openFolder(){
-//        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-//        Uri uri = Uri.parse(Paths.getOutputFolder());
-//        intent.setDataAndType(uri, "resource/folder");
-//        startActivity(Intent.createChooser(intent, "Open folder"));
-
-//        UnicornFilePicker.from(requireActivity())
-//                .addConfigBuilder()
-//                .selectMultipleFiles(true)
-//                .showOnlyDirectory(false)
-//                .setRootDirectory(Paths.getOutputFolder())
-//                .showHiddenFiles(false)
-//                .setFilters(new String[]{"mp3", "m4a", "3gp"})
-//                .addItemDivider(true)
-//                .theme(R.style.UnicornFilePicker_Dracula)
-//                .build()
-//                .forResult(PICK_FILES_REQUEST);
-    }
-
-
-//    @Override
-//    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        Log.d(TAG, "onActivityResult: ");
-//        if (requestCode == PICK_FILES_REQUEST && resultCode == RESULT_OK) {
-//            assert data != null;
-//            ArrayList<String> files = data.getStringArrayListExtra("filePaths");
-//            for(String file : files){
-//                Log.d(TAG, "onActivityResult: "+file);
-//            }
-//        }
-//    }
 
     private void setupRecyclerView() {
 
@@ -389,8 +351,6 @@ public class RecordingsFragment extends Fragment {
 
         adapter = new RecordingsAdapter(mContext, recordingsList);
         recyclerView.setAdapter(adapter);
-//        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
-//        itemTouchHelper.attachToRecyclerView(recyclerView);
 
         adapter.setOnItemClickListener(new RecordingsAdapter.OnItemClickListener() {
             @Override
@@ -405,90 +365,7 @@ public class RecordingsFragment extends Fragment {
             public void onSaveClick(final int pos, View v) {
 
                 //Prompt the user for a file rename, while the current filename is already entered into EditField
-                final Recording currentClip = recordingsList.get(pos);
-
-                final View view = LayoutInflater.from(mContext).inflate(R.layout.save_dialog_layout, null);
-
-                AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
-                alertDialog.setTitle("Confirmation Dialog");
-                alertDialog.setCancelable(false);
-                alertDialog.setMessage("Enter a new name for the audio file.");
-
-
-                final EditText renameEditText = view.findViewById(R.id.etComments);
-                String exclude = currentClip.getTitle().substring(currentClip.getTitle().length() - 6);
-                renameEditText.setText(currentClip.getTitle().substring(0, currentClip.getTitle().length() - 6));
-
-                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", new DialogInterface.OnClickListener() {
-                    @RequiresApi(api = Build.VERSION_CODES.O)
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                        String newFileName = renameEditText.getText().toString() + exclude;
-
-                        //here we rename the audio file and save the entry in db so that it doesn't get deleted automatically
-                        Recording curr_recording = recordingsList.get(pos);
-
-                        Log.d(TAG, "onSwiped: File Uri : " + curr_recording.getUri());
-
-                        File from = new File(Paths.getOutputFolderPath() + curr_recording.getTitle());
-                        File to = new File(Paths.getOutputFolderPath() +  newFileName );
-
-                        Log.d(TAG, "onClick: Rename From : "+Paths.getOutputFolder() + "/" + curr_recording.getTitle() );
-                        Log.d(TAG, "onClick: Rename To : "+Paths.getOutputFolder() + "/" + newFileName  );
-
-
-
-                        if (fileHandler.rename(from, to)) {
-                            //Rename Success
-                            Log.i(TAG, "Rename File : Success");
-                            //set Uri as well
-                            Log.d(TAG, "onClick: Uri After : "+Uri.fromFile(to));
-
-                            curr_recording.setTitle(newFileName);
-                            curr_recording.setUri(Uri.fromFile(to));
-                            recordingsList.get(pos).setTitle(newFileName);
-                            recordingsList.get(pos).setUri(Uri.fromFile(to));
-
-                            adapter.notifyDataSetChanged();
-
-                            //here we save to db
-                            if(!savedRecordingsSet.contains(curr_recording.getTitle())){
-
-                                Log.d(TAG, "onClick: Not in Saved : "+curr_recording.getTitle());
-                                savedRecordingsSet.add(curr_recording.getTitle());
-                                databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.getUri().toString());
-                                recordingsList.get(pos).setSaved(true);
-                                adapter.notifyDataSetChanged();
-
-                            }
-
-                        } else {
-                            //Fail
-                            Log.i(TAG, "Rename File : Fail");
-                        }
-
-
-
-
-
-                        Log.d(TAG, "onSaveClick: Text Entered : "+newFileName);
-
-
-                    }
-                });
-
-
-                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
-                });
-
-                alertDialog.setView(view);
-                alertDialog.show();
-
+                showRenameAndSaveDialog(pos);
 
 
             }
@@ -516,6 +393,8 @@ public class RecordingsFragment extends Fragment {
     }
 
 
+
+    //share file on other available social media apps
     private void shareFile(File filePath) {
 
         Uri uri = FileProvider.getUriForFile(mContext, mContext.getApplicationContext().getPackageName() + ".provider", filePath);
@@ -527,7 +406,7 @@ public class RecordingsFragment extends Fragment {
 
     }
 
-    public boolean checkPermission() {
+    public boolean checkPermissions() {
         int READ_EXTERNAL_PERMISSION = ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE);
         if ((READ_EXTERNAL_PERMISSION != PackageManager.PERMISSION_GRANTED)) {
             ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_READ);
@@ -535,23 +414,6 @@ public class RecordingsFragment extends Fragment {
         }
         return true;
     }
-
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_READ: {
-                if (grantResults.length > 0 && permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                    if (grantResults.length > 0 && permissions[0].equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                        Toast.makeText(mContext, "Please allow storage permission", Toast.LENGTH_LONG).show();
-                    } else {
-                        getRecordedClips();
-                    }
-                }
-            }
-        }
-    }
-
-
 
     private void showPlayer(){
         if(playerRoot.getVisibility() == View.GONE){
@@ -576,25 +438,6 @@ public class RecordingsFragment extends Fragment {
     }
 
 
-
-//    ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-//
-//        @Override
-//        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-//            Toast.makeText(mContext, "on Move", Toast.LENGTH_SHORT).show();
-//            return false;
-//        }
-//
-//        @Override
-//        public void onSwiped(final RecyclerView.ViewHolder viewHolder, int swipeDir) {
-//
-//
-//
-//
-//
-//        }
-//    };
-
     /*Deletes the file from internal storage and db(if present)*/
     private void delete(String title,  File fileToDelete){
         Log.d(TAG, "onSwiped: Key Lookup : "+title);
@@ -615,34 +458,26 @@ public class RecordingsFragment extends Fragment {
 
         //Remove swiped item from list and notify the RecyclerView
         new AlertDialog.Builder(mContext)
-                .setTitle("Delete Confirmation")
-                .setMessage("Are you sure you want to delete "+ recordingsList.get(position).getTitle().substring(0, recordingsList.get(position).getTitle().length() - 6) + " (" + Conversions.humanReadableByteCountSI(recordingsList.get(position).getSize()) + ")?")
+                .setTitle(getString(R.string.delete_dialog_title))
+                .setMessage(getString(R.string.delete_dialog_content) + recordingsList.get(position).getTitle().substring(0, recordingsList.get(position).getTitle().length() - 6) + " (" + Conversions.humanReadableByteCountSI(recordingsList.get(position).getSize()) + ")?")
 
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // Continue with delete operation
-                        Uri fileUri = recordingsList.get(position).getUri();
-                        Log.d(TAG, "onSwiped: File Uri : " + fileUri);
-                        File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
-                        totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - fileToDelete.length();
-                        //deletes file from internal storage and db as well
-                        delete(recordingsList.get(position).getTitle(), fileToDelete);
-                        recordingsList.remove(position);
-                        adapter.notifyItemRemoved(position);
-                        updateSizeTextView(totalSizeOfFolderInBytes, recordingsList.size());
+                .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                    // Continue with delete operation
+                    Uri fileUri = recordingsList.get(position).getUri();
+                    File fileToDelete = new File(Objects.requireNonNull(fileUri.getPath()));
+                    totalSizeOfFolderInBytes = totalSizeOfFolderInBytes - fileToDelete.length();
+                    //deletes file from internal storage and db as well
+                    delete(recordingsList.get(position).getTitle(), fileToDelete);
+                    recordingsList.remove(position);
+                    adapter.notifyItemRemoved(position);
+                    updateSizeTextView(totalSizeOfFolderInBytes, recordingsList.size());
 
-                    }
                 })
 
                 // A null listener allows the button to dismiss the dialog and take no further action.
-                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        adapter.notifyDataSetChanged();
-                    }
-                })
+                .setNegativeButton(android.R.string.no, (dialog, which) -> adapter.notifyDataSetChanged())
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
 
@@ -651,45 +486,94 @@ public class RecordingsFragment extends Fragment {
 
     private void showFreeUpSpaceDialog() {
         new AlertDialog.Builder(mContext)
-                .setTitle("Max Limit Reached")
-                .setMessage("Do you want to free up space by deleting the oldest non-saved recordings?\n" +
-                        "\nNote: You can disable this alert from settings.")
+                .setTitle(getString(R.string.freeup_dialog_title))
+                .setMessage(getString(R.string.freeup_dialog_content))
 
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // User agreed to delete
-                        deleteOldestFiles();
+                .setPositiveButton(getString(R.string.freeup_dialog_positive_btn), (dialog, which) -> {
+                    // User agreed to delete
+                    deleteOldestFiles();
 
-                    }
                 })
 
                 // A null listener allows the button to dismiss the dialog and take no further action.
-                .setNegativeButton("Later", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                .setNegativeButton(getString(R.string.freeup_dialog_negative_btn), (dialog, which) -> dialog.dismiss())
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
     }
 
     private void showSpaceFreedDialog(int noOfItemRemoved){
         AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
-        alertDialog.setTitle("Space Freed");
-        alertDialog.setMessage(noOfItemRemoved+ " Oldest Non-Saved Recordings Were Deleted To Free Up Space!");
+        alertDialog.setTitle(getString(R.string.space_freed_dialog_title));
+        alertDialog.setMessage(noOfItemRemoved+ getString(R.string.space_freed_dialog_content));
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
+                (dialog, which) -> dialog.dismiss());
         alertDialog.show();
     }
 
+    private void showRenameAndSaveDialog(int pos) {
+        final Recording currentClip = recordingsList.get(pos);
+
+        final View view = LayoutInflater.from(mContext).inflate(R.layout.save_dialog_layout, null);
+
+        AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
+        alertDialog.setTitle(getString(R.string.confirmation_dialog_title));
+        alertDialog.setCancelable(false);
+        alertDialog.setMessage(getString(R.string.space_freed_dialog_content));
+
+        final EditText renameEditText = view.findViewById(R.id.etComments);
+        String exclude = currentClip.getTitle().substring(currentClip.getTitle().length() - 6);
+        renameEditText.setText(currentClip.getTitle().substring(0, currentClip.getTitle().length() - 6));
+
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Save", (dialogInterface, i) -> {
+
+            String newFileName = renameEditText.getText().toString() + exclude;
+
+            //here we rename the audio file and save the entry in db so that it doesn't get deleted automatically
+            Recording curr_recording = recordingsList.get(pos);
+
+            File from = new File(Paths.getOutputFolderPath() + curr_recording.getTitle());
+            File to = new File(Paths.getOutputFolderPath() +  newFileName );
+
+            if (fileHandler.rename(from, to)) {
+                //Rename Success
+                //set title, and Uri on current list
+
+                curr_recording.setTitle(newFileName);
+                curr_recording.setUri(Uri.fromFile(to));
+                recordingsList.get(pos).setTitle(newFileName);
+                recordingsList.get(pos).setUri(Uri.fromFile(to));
+
+                adapter.notifyDataSetChanged();
+
+                //here we save to db
+                if(!savedRecordingsSet.contains(curr_recording.getTitle())) {
+                    savedRecordingsSet.add(curr_recording.getTitle());
+                    databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.getUri().toString());
+                    recordingsList.get(pos).setSaved(true);
+                    adapter.notifyDataSetChanged();
+                }
+
+            } else {
+                //Fail
+                Log.i(TAG, "Rename File : Fail");
+            }
+
+
+        });
+
+
+        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
+
+        alertDialog.setView(view);
+        alertDialog.show();
+
+    }
+
     /*-------------------------------POP-UP DIALOGS--------------------------*/
+
+
 
     /*-------------------------------LISTENERS------------------------------*/
 
@@ -697,17 +581,6 @@ public class RecordingsFragment extends Fragment {
         @Override
         public void onCompletion(MediaPlayer mp) {
             pauseBtn.setImageResource(R.drawable.ic_play_arrow_black_24dp);
-
-//            audio_index++;
-//            adapter.setSelectedPosition(audio_index);
-//
-//            if (audio_index < (recordingsList.size())) {
-//                playRecording(audio_index);
-//            } else {
-//                audio_index = 0;
-//                playRecording(audio_index);
-//            }
-
         }
     };
 
@@ -767,12 +640,7 @@ public class RecordingsFragment extends Fragment {
         }
     };
 
-    View.OnClickListener backClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-           requireActivity().onBackPressed();
-        }
-    };
+    View.OnClickListener backClickListener = v -> requireActivity().onBackPressed();
 
     View.OnClickListener closePlayerClickListener = new View.OnClickListener() {
         @Override
@@ -786,12 +654,9 @@ public class RecordingsFragment extends Fragment {
         }
     };
 
-    View.OnClickListener folderInfoClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            openFolder();
+    View.OnClickListener folderInfoClickListener = v -> {
+//            openFolder();
 
-        }
     };
 
     /*-------------------------------LISTENERS------------------------------*/

@@ -1,6 +1,10 @@
 package com.client.voidrecorder.models;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
+
+/*Locally used model for recordings*/
 public class Recording {
 
 
@@ -69,6 +73,7 @@ public class Recording {
         this.size = size;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "ModelRecordings{" +

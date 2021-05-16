@@ -22,12 +22,34 @@
 
 
 
-    <string name="timer_resume">timerResume</string>
     <string name="service_recording">The service is recording in the background.</string>
     <string name="dummy_duration">00:00</string>
     <string name="dummy_size">0 Kb</string>
     <string name="dummy_timer">00:00:00</string>
 
+    <string name="mfoura_ext">m4a</string>
+    <string name="mpthree_ext">mp3</string>
+    <string name="threegp_ext">3gp</string>
 
+
+    <string name="notification_title">Storage space running out</string>
+    <string name="notification_content">This may slow down some apps and system functions</string>
+
+    <string name="recordings_title_timestamp_format">yyyy_MM_dd_kk_mm_ss</string>
+
+    <!--Dialogs-->
+    <string name="delete_dialog_title">Delete Confirmation</string>
+    <string name="delete_dialog_content">Are you sure you want to delete</string>
+
+    <string name="freeup_dialog_title">Max Limit Reached</string>
+    <string name="freeup_dialog_content">Do you want to free up space by deleting the oldest non-saved recordings?\n\nNote: You can disable this alert from settings.</string>
+    <string name="freeup_dialog_positive_btn">Delete</string>
+    <string name="freeup_dialog_negative_btn">Later</string>
+
+    <string name="space_freed_dialog_title">Space Freed</string>
+    <string name="space_freed_dialog_content">Oldest Non-Saved Recordings Were Deleted To Free Up Space!</string>
+
+    <string name="confirmation_dialog_title">Confirmation Dialog</string>
+    <string name="confirmation_dialog_content">Enter a new name for the audio file.</string>
 
 </resources>

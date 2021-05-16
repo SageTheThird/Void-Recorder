@@ -23,12 +23,16 @@ import com.client.voidrecorder.utils.ServiceUtil;
 
 import java.util.ArrayList;
 
+
+/*
+* Adapter for recordings list
+* */
 public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.viewHolder> {
 
     Context context;
     ArrayList<Recording> recordingsList;
     public OnItemClickListener onItemClickListener;
-    int selected_position = RecyclerView.NO_POSITION; // You have to set this globally in the Adapter class
+    public int selected_position = RecyclerView.NO_POSITION; // You have to set this globally in the Adapter class
 
 
     public void setSelectedPosition(int position){
@@ -51,9 +55,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
     @Override
     public void onBindViewHolder(final RecordingsAdapter.viewHolder holder, final int i) {
 
-
-
-
+        //set background for selected item
         holder.itemView.setBackground(selected_position == i ? ContextCompat.getDrawable(context, R.drawable.recording_selected_round_background) : ContextCompat.getDrawable(context, R.drawable.recordings_round_background));
 
 
@@ -62,6 +64,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         holder.duration.setText(recordingsList.get(i).getDuration());
         holder.size.setText(Conversions.humanReadableByteCountSI(recordingsList.get(i).getSize()));
 
+        //if the service is recording, make the first item inaccessible
         if(i == 0){
             if(ServiceUtil.isServiceRunningInForeground(context, RecorderService.class)){
                 holder.itemView.setBackground(ContextCompat.getDrawable(context, R.drawable.recordings_recording_round_background));
@@ -98,11 +101,6 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
         }
 
         str = str + ext;
-//        assert str != null;
-//        if(str.contains("Lo")) { return str.replace("Lo", "");}
-//        if(str.contains("Me")) { return str.replace("Me", "");}
-//        if(str.contains("Hi")) { return str.replace("Hi", "");}
-
 
         return str;
 
@@ -131,12 +129,7 @@ public class RecordingsAdapter extends RecyclerView.Adapter<RecordingsAdapter.vi
             shareBtn = itemView.findViewById(R.id.shareBtn);
             deleteBtn = itemView.findViewById(R.id.deleteBtn);
 
-            itemView.setOnClickListener(v -> {
-                notifyItemChanged(selected_position);
-                selected_position = getLayoutPosition();
-                notifyItemChanged(selected_position);
-                onItemClickListener.onItemClick(getAdapterPosition(), v);
-            });
+            itemView.setOnClickListener(v -> onItemClickListener.onItemClick(getAdapterPosition(), v));
         }
 
 

@@ -5,16 +5,16 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
-
 import androidx.preference.PreferenceManager;
 
 
 public class App extends Application {
     public static final String CHANNEL_ID = "recordingServiceChannel";
 
-    private static Context context;
+    private Context context;
 
     NotificationManager manager;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -43,7 +43,7 @@ public class App extends Application {
     }
 
 
-    public static Context getAppContext(){
+    public Context getAppContext(){
         return context;
     }
 

@@ -1,11 +1,11 @@
 package com.client.voidrecorder.recorder;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioFormat;
 import android.media.MediaRecorder;
 import android.os.CountDownTimer;
 import android.os.IBinder;
@@ -13,8 +13,6 @@ import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.PreferenceManager;
-
-import android.util.Log;
 
 import com.client.voidrecorder.MainActivity;
 import com.client.voidrecorder.R;
@@ -37,13 +35,9 @@ public class RecorderService extends Service {
 
     private static final String TAG = "RecorderService";
 
-    public static final int SECONDS = 1000;
     public static final int MINUTES = 60 * 1000;
-
     private static final int RECORDER_SAMPLE_RATE = 44100;
     private static int RECORDER_ENCODING_BIT_RATE = 128000;
-    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
-    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     private MediaRecorder recorder;
     String recordingFullPath = "";
     String recordingName = "";
@@ -58,11 +52,7 @@ public class RecorderService extends Service {
     //countdownTimer vars
     CountDownTimer countDownTimer;
 
-    public RecorderService() {
-
-
-
-    }
+    public RecorderService() {}
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -72,23 +62,23 @@ public class RecorderService extends Service {
             //shows a silent notification and start the recorder
             showRecordingNotification();
 
+            //gets selected settings
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
             OUTPUT_QUALITY = sharedPreferences.getString(getString(R.string.output_quality_pref), "");
 
-
             startRecorder();
+
             startTimer();
 
 
             //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
             if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
 
-                fetchSavedRecordings();
-
                 databaseTransactions = new DatabaseTransactions(this);
 
+                fetchSavedRecordings();
 
-                checkSpaceLimit();
+                checkSpaceLimitAndDelete();
             }
 
 
@@ -99,40 +89,38 @@ public class RecorderService extends Service {
         return START_STICKY;
     }
 
+    /*Timer for recording*/
     private void startTimer() {
         Intent intent = new Intent("CountDownIntent");
         final long[] milliSeconds = {0};
         countDownTimer = new CountDownTimer(Long.MAX_VALUE, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-
                 milliSeconds[0] = milliSeconds[0] + 1000;
                 intent.putExtra("timer", milliSeconds[0]);
                 sendBroadcast(intent);
-                Log.d(TAG, "onTick: Timer In Service : "+milliSeconds[0]);
             }
 
             public void onFinish() {
                 stopSelf();
             }
-        }.start();;
+        }.start();
 
     }
 
     private void fetchSavedRecordings() {
         try {
             savedRecordingsSet = databaseTransactions.getAllRecordingsDb();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
 
         MAX_ALLOWED_STORAGE = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(getApplicationContext().getString(R.string.max_space_pref), ""))) * 1000000 ;
-        fileHandler = new FileHandler();
+        fileHandler = new FileHandler(this);
     }
 
-    private void checkSpaceLimit() {
+    /*Checks space limit and checks if the file is saved or not and delete accordingly*/
+    private void checkSpaceLimitAndDelete() {
 
         File[] files = fileHandler.getFilesFromOutputFolder();
         long totalSize =  0;
@@ -140,7 +128,6 @@ public class RecorderService extends Service {
         for(File file : files){
             totalSize += file.length();
         }
-
 
         int noOfItemRemoved=0;
 
@@ -151,13 +138,9 @@ public class RecorderService extends Service {
             for(int i= files.length - 1; i>=0 ; i--) {
 
                 if(!isRecordingSaved(files[i].getName())){
-                    //delete the recording and check the size
-                    Log.d(TAG, "checkSpaceLimit: Good to delete : "+i+files[i].getName());
+                    //recording is not saved, delete the recording and check the size
                     totalSize = totalSize - files[i].length();
                     fileHandler.deleteFile(files[i]);
-
-
-                    Log.d(TAG, "checkSpaceLimit: Folder Size After Deletion : "+totalSize);
 
                     //check if after deletion it is less than max_allowed
                     if(totalSize >= MAX_ALLOWED_STORAGE){
@@ -167,31 +150,14 @@ public class RecorderService extends Service {
 
                         //all redundant files deleted
                         noOfItemRemoved++;
-                        Log.d(TAG, "checkSpaceLimit: Files Deleted : "+noOfItemRemoved);
 
                         break;
                     }
-                }else{
-
-                    Log.d(TAG, "checkSpaceLimit: Not Good to delete : "+i+files[i].getName());
-
                 }
-
-
-
-
             }
-
-
         }
-        
-        Log.d(TAG, "checkSpaceLimit: Files Recordings : " + files.length);
-//        List<ModelRecordings> recordings = fileHandler.getRecordingsListFromFiles(files);
-        Log.d(TAG, "checkSpaceLimit: Total Size Of Folder : "+totalSize);
-
 
     }
-
 
     /*Setups the recorder and start recording*/
     private void startRecorder(){
@@ -217,20 +183,13 @@ public class RecorderService extends Service {
 
         recordingFullPath = folder.getAbsolutePath() + File.separator + recordingName;
 
-        Log.e("path recording", recordingFullPath);
-
         recorder.setOutputFile(recordingFullPath);
-
         recorder.setMaxDuration(Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(getApplicationContext().getString(R.string.max_duration), ""))) * MINUTES);//recording stops after x minutes
 
         //After the recorder reaches  maxDuration, we can catch the event here
-        recorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
-            @Override
-            public void onInfo(MediaRecorder mediaRecorder, int i, int i1) {
-                Log.d(TAG, "onInfo: Max Duration Reached, Resetting Recorder");
-                stopRecorder();
-                startRecorder();
-            }
+        recorder.setOnInfoListener((mediaRecorder, i, i1) -> {
+            stopRecorder();
+            startRecorder();
         });
 
 
@@ -302,7 +261,7 @@ public class RecorderService extends Service {
 
     //generates formatted date/time for title
     private String dateTimeNow(){
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_kk_mm_ss");
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat dateFormat = new SimpleDateFormat(getString(R.string.recordings_title_timestamp_format));
         return dateFormat.format(new Date());
     }
 
@@ -312,10 +271,10 @@ public class RecorderService extends Service {
 
         // builds notification
         // the addAction re-use the same intent to keep the example short
-        Notification notification = null;
+        Notification notification;
         notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle("Storage space running out")
-                    .setContentText("This may slow down some apps and system functions")
+                    .setContentTitle(getString(R.string.notification_title))
+                    .setContentText(getString(R.string.notification_content))
                     .setSmallIcon(R.drawable.ic_baseline_settings_24)
                     .setContentIntent(pIntent)
                     .setPriority(Notification.PRIORITY_MIN)
@@ -326,10 +285,6 @@ public class RecorderService extends Service {
 
     }
 
-    @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -366,18 +321,6 @@ public class RecorderService extends Service {
         recorder.reset();
         recorder.release();
         recorder = null;
-
-
-
-        //creating content resolver and put the values
-//        ContentValues values = new ContentValues();
-//        values.put(MediaStore.Audio.Media.DATA, recordingFullPath);
-//        values.put(MediaStore.Audio.Media.MIME_TYPE, "audio/3gpp");
-//        values.put(MediaStore.Audio.Media.TITLE, recordingName);
-//
-//        //store audio recorder file in the external content uri
-//        getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values);
-
     }
 
 
