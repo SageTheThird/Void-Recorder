@@ -67,20 +67,7 @@ public class RecorderService extends Service {
             OUTPUT_QUALITY = sharedPreferences.getString(getString(R.string.output_quality_pref), "");
 
             startRecorder();
-
             startTimer();
-
-
-            //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
-            if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
-
-                databaseTransactions = new DatabaseTransactions(this);
-
-                fetchSavedRecordings();
-
-                checkSpaceLimitAndDelete();
-            }
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -159,9 +146,15 @@ public class RecorderService extends Service {
 
     }
 
-    /*Setups the recorder and start recording*/
+    /*Setup the recorder and start recording*/
     private void startRecorder(){
 
+        //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
+        if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
+            databaseTransactions = new DatabaseTransactions(this);
+            fetchSavedRecordings();
+            checkSpaceLimitAndDelete();
+        }
 
         if(recorder == null){
             recorder = new MediaRecorder();
@@ -199,7 +192,6 @@ public class RecorderService extends Service {
             e.printStackTrace();
         }
         recorder.start();
-
     }
 
 
