@@ -69,6 +69,13 @@ public class RecorderService extends Service {
             startRecorder();
             startTimer();
 
+            //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
+            if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
+                databaseTransactions = new DatabaseTransactions(this);
+                fileHandler = new FileHandler(this);
+                fetchSavedRecordings();
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -103,7 +110,6 @@ public class RecorderService extends Service {
         }
 
         MAX_ALLOWED_STORAGE = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(getApplicationContext().getString(R.string.max_space_pref), ""))) * 1000000 ;
-        fileHandler = new FileHandler(this);
     }
 
     /*Checks space limit and checks if the file is saved or not and delete accordingly*/
@@ -148,10 +154,7 @@ public class RecorderService extends Service {
 
     /*Setup the recorder and start recording*/
     private void startRecorder(){
-
-        //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
-        if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
-            databaseTransactions = new DatabaseTransactions(this);
+        if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)) {
             fetchSavedRecordings();
             checkSpaceLimitAndDelete();
         }
@@ -192,6 +195,7 @@ public class RecorderService extends Service {
             e.printStackTrace();
         }
         recorder.start();
+
     }
 
 
