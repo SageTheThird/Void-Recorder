@@ -56,8 +56,6 @@ public class RecorderService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-
         try {
             //shows a silent notification and start the recorder
             showRecordingNotification();
@@ -69,7 +67,7 @@ public class RecorderService extends Service {
             startRecorder();
             startTimer();
 
-            //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
+            //if automatic deletion: on , it will init database, fetch saved recordings
             if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
                 databaseTransactions = new DatabaseTransactions(this);
                 fileHandler = new FileHandler(this);
@@ -99,7 +97,6 @@ public class RecorderService extends Service {
                 stopSelf();
             }
         }.start();
-
     }
 
     private void fetchSavedRecordings() {
@@ -121,9 +118,6 @@ public class RecorderService extends Service {
         for(File file : files){
             totalSize += file.length();
         }
-
-        int noOfItemRemoved=0;
-
         
         if(totalSize != 0 && totalSize >= MAX_ALLOWED_STORAGE){
             //total size has exceeded space limit
@@ -132,28 +126,21 @@ public class RecorderService extends Service {
 
                 if(!isRecordingSaved(files[i].getName())){
                     //recording is not saved, delete the recording and check the size
-                    totalSize = totalSize - files[i].length();
+                    totalSize -= files[i].length();
                     fileHandler.deleteFile(files[i]);
 
                     //check if after deletion it is less than max_allowed
-                    if(totalSize >= MAX_ALLOWED_STORAGE){
-                        //continue to next entry
-                        noOfItemRemoved++;
-                    }else{
-
-                        //all redundant files deleted
-                        noOfItemRemoved++;
-
+                    if(totalSize < MAX_ALLOWED_STORAGE){
                         break;
                     }
                 }
             }
         }
-
     }
 
     /*Setup the recorder and start recording*/
     private void startRecorder(){
+        //if automatic deletion: fetch saved recordings and delete the oldest non-saved files
         if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)) {
             fetchSavedRecordings();
             checkSpaceLimitAndDelete();
@@ -168,10 +155,7 @@ public class RecorderService extends Service {
 
             recorder.setAudioEncodingBitRate(RECORDER_ENCODING_BIT_RATE);//2 * 128000 - highest
             recorder.setAudioSamplingRate(RECORDER_SAMPLE_RATE);
-
         }
-
-
 
         File folder = new File(Paths.getOutputFolder());
 
@@ -195,31 +179,23 @@ public class RecorderService extends Service {
             e.printStackTrace();
         }
         recorder.start();
-
     }
-
-
+    
     private void setOutputFormat(String format) {
-
         switch (format){
             case "m4a":
-
                 recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
                 EXTENSION = "m4a";
 
                 break;
 
-
-
             case "3gp":
                 recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
                 EXTENSION = "3gp";
 
-
                 break;
-
 
             case "mp3":
 
@@ -227,10 +203,8 @@ public class RecorderService extends Service {
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
                 EXTENSION = "mp3";
 
-
                 break;
         }
-
     }
 
     private void setAudioQuality(String quality) {
@@ -238,18 +212,12 @@ public class RecorderService extends Service {
         switch (quality){
             case "Hi":
                 RECORDER_ENCODING_BIT_RATE = 2 * 128000;
-
                 break;
             case "Me":
-
                 RECORDER_ENCODING_BIT_RATE = 128000;
-
-
                 break;
             case "Lo":
-
                 RECORDER_ENCODING_BIT_RATE = 64000;
-
                 break;
         }
 
@@ -278,9 +246,7 @@ public class RecorderService extends Service {
                     .build();
 
             startForeground(1, notification);
-
     }
-
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -306,11 +272,8 @@ public class RecorderService extends Service {
 
         } catch (Exception e) {
             e.printStackTrace();
-
         }
     }
-
-
 
     private void stopRecorder(){
         recorder.stop();
@@ -319,10 +282,8 @@ public class RecorderService extends Service {
         recorder = null;
     }
 
-
     public boolean isRecordingSaved(String title) {
         if(savedRecordingsSet== null) return false;
         return savedRecordingsSet.size() > 0 && savedRecordingsSet.contains(title);
     }
-
 }
