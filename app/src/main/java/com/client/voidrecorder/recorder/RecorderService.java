@@ -57,6 +57,9 @@ public class RecorderService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
+            databaseTransactions = new DatabaseTransactions(this);
+            fileHandler = new FileHandler(this);
+
             //shows a silent notification and start the recorder
             showRecordingNotification();
 
@@ -67,12 +70,7 @@ public class RecorderService extends Service {
             startRecorder();
             startTimer();
 
-            //if automatic deletion: on , it will init database, fetch saved recordings
-            if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
-                databaseTransactions = new DatabaseTransactions(this);
-                fileHandler = new FileHandler(this);
-                fetchSavedRecordings();
-            }
+            fetchSavedRecordings();
 
         } catch (Exception e) {
             e.printStackTrace();
