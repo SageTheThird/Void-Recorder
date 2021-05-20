@@ -71,14 +71,10 @@ public class RecorderService extends Service {
             startTimer();
 
 
-            //if automatic deletion: on , it will init database, fetch saved recordings and delete the oldest non-saved files
+            //if automatic deletion: on , it will init database, fetch saved recordings and delete the otldes non-saved files
             if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
-
                 databaseTransactions = new DatabaseTransactions(this);
-
-                fetchSavedRecordings();
-
-                checkSpaceLimitAndDelete();
+                fileHandler = new FileHandler(this);
             }
 
 
@@ -116,7 +112,7 @@ public class RecorderService extends Service {
         }
 
         MAX_ALLOWED_STORAGE = Integer.parseInt(Objects.requireNonNull(sharedPreferences.getString(getApplicationContext().getString(R.string.max_space_pref), ""))) * 1000000 ;
-        fileHandler = new FileHandler(this);
+
     }
 
     /*Checks space limit and checks if the file is saved or not and delete accordingly*/
@@ -164,6 +160,7 @@ public class RecorderService extends Service {
 
 
         if(recorder == null){
+
             recorder = new MediaRecorder();
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
@@ -189,6 +186,8 @@ public class RecorderService extends Service {
         //After the recorder reaches  maxDuration, we can catch the event here
         recorder.setOnInfoListener((mediaRecorder, i, i1) -> {
             stopRecorder();
+            //if automatic deletion: on , fetch saved recordings and delete the oldest non-saved files
+            deleteFilesIfSpaceLimitReached();
             startRecorder();
         });
 
@@ -202,6 +201,12 @@ public class RecorderService extends Service {
 
     }
 
+    private void deleteFilesIfSpaceLimitReached(){
+        if(sharedPreferences.getBoolean(getString(R.string.automatic_deletion_pref), false)){
+            fetchSavedRecordings();
+            checkSpaceLimitAndDelete();
+        }
+    }
 
     private void setOutputFormat(String format) {
 

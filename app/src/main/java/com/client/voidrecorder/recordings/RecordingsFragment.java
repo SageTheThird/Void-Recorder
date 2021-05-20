@@ -120,7 +120,12 @@ public class RecordingsFragment extends Fragment {
             bindViews(view);
 
             setupRecordings();
+
+
         }
+
+
+
 
     }
 
@@ -153,6 +158,8 @@ public class RecordingsFragment extends Fragment {
         titlePlayerTv = parentView.findViewById(R.id.titlePlayerTv);
         root = parentView.findViewById(R.id.root);
         closePlayerBtn = parentView.findViewById(R.id.closePlayerBtn);
+
+        backBtn.setOnClickListener(backClickListener);
     }
 
     public void setupRecordings() {
@@ -172,7 +179,6 @@ public class RecordingsFragment extends Fragment {
             prevBtn.setOnClickListener(prevClickListener);
             nextBtn.setOnClickListener(nextClickListener);
             pauseBtn.setOnClickListener(pauseClickListener);
-            backBtn.setOnClickListener(backClickListener);
             closePlayerBtn.setOnClickListener(closePlayerClickListener);
             folderInfoTv.setOnClickListener(folderInfoClickListener);
 
@@ -365,7 +371,10 @@ public class RecordingsFragment extends Fragment {
             public void onSaveClick(final int pos, View v) {
 
                 //Prompt the user for a file rename, while the current filename is already entered into EditField
-                showRenameAndSaveDialog(pos);
+                if(!savedRecordingsSet.contains(recordingsList.get(pos).getTitle())) {
+                    showRenameAndSaveDialog(pos);
+                }
+
 
 
             }
@@ -374,6 +383,7 @@ public class RecordingsFragment extends Fragment {
             public void onShareClick(int pos, View v) {
                 //Take the audio file and share it across multiple apps using intent
                 try {
+
 
                     shareFile(new File(Objects.requireNonNull(recordingsList.get(pos).getUri().getPath())));
 
@@ -548,12 +558,12 @@ public class RecordingsFragment extends Fragment {
                 adapter.notifyDataSetChanged();
 
                 //here we save to db
-                if(!savedRecordingsSet.contains(curr_recording.getTitle())) {
+
                     savedRecordingsSet.add(curr_recording.getTitle());
                     databaseTransactions.saveRecordingToDb(curr_recording.getTitle(), curr_recording.getUri().toString());
                     recordingsList.get(pos).setSaved(true);
                     adapter.notifyDataSetChanged();
-                }
+
 
             } else {
                 //Fail
