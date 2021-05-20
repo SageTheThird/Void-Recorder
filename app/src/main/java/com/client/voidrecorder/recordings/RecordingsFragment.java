@@ -516,7 +516,7 @@ public class RecordingsFragment extends Fragment {
     private void showSpaceFreedDialog(int noOfItemRemoved){
         AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
         alertDialog.setTitle(getString(R.string.space_freed_dialog_title));
-        alertDialog.setMessage(noOfItemRemoved+ getString(R.string.space_freed_dialog_content));
+        alertDialog.setMessage(noOfItemRemoved + " " + getString(R.string.space_freed_dialog_content));
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                 (dialog, which) -> dialog.dismiss());
         alertDialog.show();
